@@ -5,7 +5,7 @@
 #   Value: domain, email, URL, hash, or IP per Type
 #   ExpirationDays: 30 (default), 90, or 365. Permanent = leave blank.
 #   Notes: free-text describing why this allow exists
-# Example row: Sender,marketing@censys.com,90,Legit security marketing with broken DKIM
+# Example row: Sender,marketing@example-saas.com,90,Legit security marketing with broken DKIM
 # Usage: .\add-tenant-allow-list-entries.ps1 -EntriesCsv allow-entries.csv
 
 [CmdletBinding()]
