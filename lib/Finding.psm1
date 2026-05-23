@@ -47,7 +47,9 @@ function Write-PhaseReport {
         [string] $SubscriptionId = $null,
         [string] $Domain = $null,
         [string] $AuditScriptVersion = "1.0.0",
-        [Parameter(Mandatory)] [array] $Findings
+        [Parameter(Mandatory)]
+        [AllowEmptyCollection()]
+        [array] $Findings
     )
     $report = [ordered]@{
         phase                 = $Phase
@@ -73,7 +75,11 @@ function Get-FindingSeverityCount {
     Tally findings array by severity.
     #>
     [CmdletBinding()]
-    param ([Parameter(Mandatory)] [array] $Findings)
+    param (
+        [Parameter(Mandatory)]
+        [AllowEmptyCollection()]
+        [array] $Findings
+    )
     $result = [ordered]@{ P1=0; P2=0; P3=0; INFO=0; OUT_OF_SCOPE=0 }
     foreach ($f in $Findings) { $result[$f.severity]++ }
     return $result
