@@ -99,13 +99,19 @@ function Invoke-ArmMock {
         [Parameter(Mandatory)]
         [string] $Uri
     )
-    $map = @{
+    $map = [ordered]@{
         "*/Microsoft.Security/pricings*"                                              = "arm-pricings"
         "*/Microsoft.Security/secureScores*"                                          = "arm-secure-score"
-        "*/Microsoft.OperationalInsights/workspaces/*?*"                              = "arm-workspace"
         "*/Microsoft.SecurityInsights/onboardingStates*"                              = "arm-sentinel-onboarding"
         "*/Microsoft.SecurityInsights/alertRules*"                                    = "arm-analytics-rules"
+        "*/Microsoft.SecurityInsights/dataConnectors*"                                = "arm-sentinel-data-connectors"
+        "*/Microsoft.SecurityInsights/watchlists*"                                    = "arm-sentinel-watchlists"
+        "*/Microsoft.SecurityInsights/settings/EntityAnalytics*"                      = "arm-sentinel-ueba"
+        "*/Microsoft.Insights/workbooks*"                                             = "arm-sentinel-workbooks"
+        "*/Microsoft.Logic/workflows*"                                                = "arm-logic-workflows"
+        "*/savedSearches*"                                                            = "arm-saved-searches"
         "*/providers/microsoft.insights/diagnosticSettings*"                          = "arm-diagnostic-settings"
+        "*/Microsoft.OperationalInsights/workspaces/*?*"                              = "arm-workspace"
     }
     foreach ($pattern in $map.Keys) {
         if ($Uri -like $pattern) {

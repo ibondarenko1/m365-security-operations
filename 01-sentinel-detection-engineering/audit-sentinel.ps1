@@ -182,6 +182,162 @@ try {
     [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "P3" -Title "Diagnostic setting enumeration failed" -Description "Error: $($_.Exception.Message)"))
 }
 
+# === Data connectors ===
+try {
+    $connectorsUri = "$baseWs/providers/Microsoft.SecurityInsights/dataConnectors`?api-version=2024-09-01"
+    $connectors = Invoke-ArmGet -Uri $connectorsUri | ConvertFrom-Json -ErrorAction Stop
+    if ($connectors.value.Count -eq 0) {
+        [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "P2" `
+            -Title "No Sentinel data connectors configured" `
+            -Description "Sentinel has zero data connectors. Without connectors, only manually-piped log sources (like diagnostic settings) ingest. Detection coverage is structurally limited." `
+            -FrameworkControls @("NIST.CSF.DE.CM-01","NIST.800-53.SI-4") `
+            -DocumentationUrl "https://learn.microsoft.com/en-us/azure/sentinel/connect-data-sources" `
+            -RemediationSteps @(
+                "Identify priority data sources: Azure AD (sign-ins + audit logs), Defender XDR, Office 365.",
+                "Sentinel > Content management > Content hub > Install solution per source.",
+                "Or via API: PUT each dataConnectors/<id> endpoint."
+            )))
+    } else {
+        [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "INFO" `
+            -Title "Sentinel data connectors configured" `
+            -Description "$($connectors.value.Count) data connector(s) deployed." `
+            -Evidence @{ count = $connectors.value.Count; names = ($connectors.value | ForEach-Object { $_.name }) }))
+    }
+} catch {
+    [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "P3" -Title "Data connectors enumeration failed" -Description "Error: $($_.Exception.Message)"))
+}
+
+# === Workbooks ===
+try {
+    $wbUri = "https://management.azure.com/subscriptions/$SubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.Insights/workbooks`?api-version=2022-04-01&category=sentinel"
+    $workbooks = Invoke-ArmGet -Uri $wbUri | ConvertFrom-Json -ErrorAction Stop
+    if ($workbooks.value.Count -eq 0) {
+        [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "P3" `
+            -Title "No Sentinel workbooks deployed" `
+            -Description "Workbooks provide visual dashboards over Sentinel data. None deployed means analysts rely on raw KQL queries for situational awareness. Microsoft publishes 50+ free workbook templates." `
+            -FrameworkControls @("NIST.CSF.DE.AE-03") `
+            -DocumentationUrl "https://learn.microsoft.com/en-us/azure/sentinel/get-visibility" `
+            -RemediationSteps @(
+                "Sentinel > Threat management > Workbooks > Templates.",
+                "Install: Azure Activity, Identity & Access, Microsoft 365, MITRE ATT&CK Workbook, Investigation Insights."
+            )))
+    } else {
+        [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "INFO" `
+            -Title "Sentinel workbooks deployed" `
+            -Description "$($workbooks.value.Count) workbook(s)."))
+    }
+} catch { }
+
+# === Hunting queries ===
+try {
+    $hqUri = "$baseWs/savedSearches`?api-version=2020-08-01"
+    $hq = Invoke-ArmGet -Uri $hqUri | ConvertFrom-Json -ErrorAction Stop
+    $huntingCount = ($hq.value | Where-Object { $_.properties.category -eq "Hunting Queries" }).Count
+    if ($huntingCount -eq 0) {
+        [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "P3" `
+            -Title "No saved hunting queries" `
+            -Description "Sentinel has zero saved hunting queries. Hunting is the proactive analyst activity layered above analytics rules. Microsoft and community publish hundreds of curated queries." `
+            -FrameworkControls @("NIST.CSF.DE.AE-02") `
+            -DocumentationUrl "https://learn.microsoft.com/en-us/azure/sentinel/hunting" `
+            -RemediationSteps @(
+                "Sentinel > Threat management > Hunting > Queries.",
+                "Install community content via Content hub: 'Hunting Queries' solutions per data source.",
+                "Or import from https://github.com/Azure/Azure-Sentinel/tree/master/Hunting%20Queries."
+            )))
+    } else {
+        [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "INFO" `
+            -Title "Hunting queries available" `
+            -Description "$huntingCount hunting queries saved."))
+    }
+} catch { }
+
+# === Automation playbooks (Logic Apps tied to Sentinel) ===
+try {
+    $autoUri = "https://management.azure.com/subscriptions/$SubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.Logic/workflows`?api-version=2019-05-01"
+    $playbooks = Invoke-ArmGet -Uri $autoUri | ConvertFrom-Json -ErrorAction Stop
+    if ($playbooks.value.Count -eq 0) {
+        [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "P3" `
+            -Title "No Sentinel automation playbooks (Logic Apps)" `
+            -Description "Zero Logic Apps in the resource group. Sentinel SOAR functionality depends on playbooks for automated response (enrich, contain, notify, ticket)." `
+            -FrameworkControls @("NIST.CSF.RS.MI-02","NIST.800-53.IR-4") `
+            -DocumentationUrl "https://learn.microsoft.com/en-us/azure/sentinel/automation/automation" `
+            -RemediationSteps @(
+                "Identify high-volume incident types worth automating (e.g. disabled-user-signed-in -> auto-disable, suspicious-ip -> add-to-block-list).",
+                "Sentinel > Content hub > install 'SOAR' solutions per use case.",
+                "Build custom playbooks via Logic Apps designer + Microsoft Sentinel connector."
+            )))
+    } else {
+        [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "INFO" `
+            -Title "Logic Apps present in resource group" `
+            -Description "$($playbooks.value.Count) Logic App(s). May or may not be tied to Sentinel — manual review needed."))
+    }
+} catch { }
+
+# === Watchlists ===
+try {
+    $wlUri = "$baseWs/providers/Microsoft.SecurityInsights/watchlists`?api-version=2024-09-01"
+    $wl = Invoke-ArmGet -Uri $wlUri | ConvertFrom-Json -ErrorAction Stop
+    if ($wl.value.Count -eq 0) {
+        [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "P3" `
+            -Title "No Sentinel watchlists" `
+            -Description "Watchlists let analytics rules and hunting queries reference curated lists (high-value users, terminated employees, known-bad IPs, vendor IP ranges). Without watchlists, similar logic gets hardcoded in queries — harder to maintain." `
+            -FrameworkControls @("NIST.CSF.DE.AE-02") `
+            -DocumentationUrl "https://learn.microsoft.com/en-us/azure/sentinel/watchlists" `
+            -RemediationSteps @(
+                "Sentinel > Configuration > Watchlists.",
+                "Start with: 'High Value Assets' (priority accounts), 'Terminated Employees' (HR feed), 'VIP Users' (executives + finance)."
+            )))
+    } else {
+        [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "INFO" `
+            -Title "Sentinel watchlists configured" `
+            -Description "$($wl.value.Count) watchlist(s)."))
+    }
+} catch { }
+
+# === UEBA / behavior analytics ===
+try {
+    $uebaUri = "$baseWs/providers/Microsoft.SecurityInsights/settings/EntityAnalytics`?api-version=2024-09-01"
+    $ueba = Invoke-ArmGet -Uri $uebaUri | ConvertFrom-Json -ErrorAction SilentlyContinue
+    $enabled = $false
+    if ($ueba.properties.entityProviders -and $ueba.properties.entityProviders.Count -gt 0) { $enabled = $true }
+    if (-not $enabled) {
+        [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "P3" `
+            -Title "UEBA (Entity Analytics) not enabled" `
+            -Description "Sentinel UEBA derives behavioral baselines and risk scores from sign-in + activity data. Without it, anomaly detection relies on hand-authored thresholds in rules." `
+            -FrameworkControls @("NIST.CSF.DE.AE-02","NIST.CSF.DE.AE-03") `
+            -DocumentationUrl "https://learn.microsoft.com/en-us/azure/sentinel/enable-entity-behavior-analytics" `
+            -RemediationSteps @(
+                "Sentinel > Configuration > Settings > Entity behavior.",
+                "Requires Azure AD Identity Protection (Entra ID P2). Toggle on after license available."
+            )))
+    }
+} catch { }
+
+# === Threat intelligence indicators ===
+try {
+    $tiUri = "$baseWs/providers/Microsoft.SecurityInsights/threatIntelligence/main/queryIndicators`?api-version=2024-09-01"
+    $tiBody = '{"pageSize":1}'
+    $tiBodyFile = "$env:TEMP\ti-query.json"
+    if (-not $MockMode) {
+        Set-Content -Path $tiBodyFile -Value $tiBody -Encoding utf8 -NoNewline
+        $ti = & $az rest --method post --uri $tiUri --body "@$tiBodyFile" 2>&1 | ConvertFrom-Json -ErrorAction SilentlyContinue
+    } else {
+        # Mock empty TI
+        $ti = [pscustomobject]@{ value = @() }
+    }
+    if ($ti.value.Count -eq 0) {
+        [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "P3" `
+            -Title "No threat intelligence indicators ingested" `
+            -Description "Sentinel has zero TI indicators (TI tables: ThreatIntelligenceIndicator). Without TI feeds, rules cannot pivot suspicious entities against known-bad lists from MISP, OTX, Microsoft, or commercial feeds." `
+            -FrameworkControls @("NIST.CSF.ID.RA-02","NIST.CSF.DE.AE-02") `
+            -DocumentationUrl "https://learn.microsoft.com/en-us/azure/sentinel/understand-threat-intelligence" `
+            -RemediationSteps @(
+                "Sentinel > Content hub > install: Threat Intelligence Platforms (TAXII server) OR Microsoft Defender Threat Intelligence solution.",
+                "Configure TAXII feeds: AlienVault OTX (free), Anomali Limo (free), MISP (self-hosted)."
+            )))
+    }
+} catch { }
+
 # === Final write ===
 $severityCounts = Get-FindingSeverityCount -Findings $findings
 Write-Host ""
