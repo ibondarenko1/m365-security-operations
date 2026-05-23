@@ -88,8 +88,10 @@ Describe "Write-PhaseReport" {
 
     It "writes valid ISO 8601 timestamp_utc" {
         Write-PhaseReport -Phase "p" -PhaseDisplayName "P" -OutputPath $TempPath -Findings @()
-        $obj = Get-Content $TempPath -Raw | ConvertFrom-Json
-        $obj.timestamp_utc | Should -Match '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}'
+        # Read raw JSON text - avoids ConvertFrom-Json auto-coercing ISO strings to [DateTime]
+        # on PowerShell 7+ Linux/Mac which then stringifies via culture-default format.
+        $rawJson = Get-Content $TempPath -Raw
+        $rawJson | Should -Match '"timestamp_utc"\s*:\s*"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}'
     }
 
     It "creates parent directory if needed" {
