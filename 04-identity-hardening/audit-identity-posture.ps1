@@ -10,18 +10,32 @@ param (
     [string] $TenantId,
 
     [Parameter(Mandatory=$true)]
-    [string] $OutputJsonPath
+    [string] $OutputJsonPath,
+
+    [switch] $MockMode,
+
+    [string] $FixturesPath = (Join-Path $PSScriptRoot "..\examples\fixtures")
 )
 
 Import-Module (Join-Path $PSScriptRoot "..\lib\Finding.psm1") -Force
+if ($MockMode) {
+    Import-Module (Join-Path $PSScriptRoot "..\lib\MockClient.psm1") -Force
+    Initialize-MockClient -FixturesPath $FixturesPath
+    # Wrap Invoke-RestMethod so all Graph calls route through the mock client
+    function Invoke-RestMethod {
+        param ([string] $Uri, [hashtable] $Headers, [string] $Method = "GET", $Body, [string] $ErrorAction)
+        return Invoke-GraphMock -Uri $Uri
+    }
+    $headers = @{ Authorization = "Bearer mock" }
+} else {
+    # Find az CLI
+    $az = "C:\Program Files\Microsoft SDKs\Azure\CLI2\wbin\az.cmd"
+    if (-not (Test-Path $az)) { $az = "az" }
 
-# Find az CLI
-$az = "C:\Program Files\Microsoft SDKs\Azure\CLI2\wbin\az.cmd"
-if (-not (Test-Path $az)) { $az = "az" }
-
-$token = & $az account get-access-token --resource "https://graph.microsoft.com" --query accessToken -o tsv 2>$null
-if (-not $token) { Write-Error "Failed to acquire Graph access token. Run 'az login' first."; exit 1 }
-$headers = @{ Authorization = "Bearer $token" }
+    $token = & $az account get-access-token --resource "https://graph.microsoft.com" --query accessToken -o tsv 2>$null
+    if (-not $token) { Write-Error "Failed to acquire Graph access token. Run 'az login' first."; exit 1 }
+    $headers = @{ Authorization = "Bearer $token" }
+}
 
 $findings = New-Object System.Collections.ArrayList
 $findingCounter = 0

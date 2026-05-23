@@ -1,0 +1,4 @@
+[
+  { "Domain": "example.com",                  "Enabled": true, "Status": "Valid" },
+  { "Domain": "example.onmicrosoft.com",      "Enabled": true, "Status": "Valid" }
+]

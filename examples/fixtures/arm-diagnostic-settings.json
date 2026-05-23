@@ -1,0 +1,18 @@
+{
+  "value": [
+    {
+      "id": "/subscriptions/11111111-1111-1111-1111-111111111111/providers/microsoft.insights/diagnosticSettings/example-activity-to-sentinel",
+      "name": "example-activity-to-sentinel",
+      "properties": {
+        "workspaceId": "/subscriptions/11111111-1111-1111-1111-111111111111/resourceGroups/example-rg/providers/Microsoft.OperationalInsights/workspaces/example-ws",
+        "logs": [
+          { "category": "Administrative", "enabled": true },
+          { "category": "Security", "enabled": true },
+          { "category": "ServiceHealth", "enabled": true },
+          { "category": "Alert", "enabled": true },
+          { "category": "Policy", "enabled": true }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "comment": "Synthetic representation of /directoryRoles enumeration with members expanded. Real Graph requires separate per-role member call; this fixture pre-joins for simplicity.",
+  "value": [
+    {
+      "id": "44444444-4444-4444-4444-440000000001",
+      "displayName": "Global Administrator",
+      "roleTemplateId": "62e90394-69f5-4237-9190-012177145e10",
+      "members": [
+        { "id": "55555555-5555-5555-5555-550000000001", "userPrincipalName": "admin@example.com" },
+        { "id": "55555555-5555-5555-5555-550000000002", "userPrincipalName": "owner@example.com" },
+        { "id": "55555555-5555-5555-5555-550000000003", "userPrincipalName": "shared-admin@example.com" }
+      ]
+    },
+    {
+      "id": "44444444-4444-4444-4444-440000000002",
+      "displayName": "Exchange Administrator",
+      "roleTemplateId": "29232cdf-9323-42fd-ade2-1d097af3e4de",
+      "members": [
+        { "id": "55555555-5555-5555-5555-550000000004", "userPrincipalName": "ops@example.com" }
+      ]
+    },
+    {
+      "id": "44444444-4444-4444-4444-440000000003",
+      "displayName": "User Administrator",
+      "roleTemplateId": "fe930be7-5e62-47db-91af-98c3a49a38b1",
+      "members": [
+        { "id": "55555555-5555-5555-5555-550000000004", "userPrincipalName": "ops@example.com" }
+      ]
+    },
+    {
+      "id": "44444444-4444-4444-4444-440000000004",
+      "displayName": "SharePoint Administrator",
+      "roleTemplateId": "f28a1f50-f6e7-4571-818b-6a12f2af6b6c",
+      "members": [
+        { "id": "55555555-5555-5555-5555-550000000004", "userPrincipalName": "ops@example.com" }
+      ]
+    },
+    {
+      "id": "44444444-4444-4444-4444-440000000005",
+      "displayName": "Teams Administrator",
+      "roleTemplateId": "69091246-20e8-4a56-aa4d-066075b2a7a8",
+      "members": [
+        { "id": "55555555-5555-5555-5555-550000000004", "userPrincipalName": "ops@example.com" }
+      ]
+    }
+  ]
+}

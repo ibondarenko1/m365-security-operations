@@ -1,0 +1,22 @@
+{
+  "comment": "Mostly-Free Defender for Cloud plans typical for a small org without Azure workloads. FoundationalCspm + Discovery on Standard per Microsoft default promotion.",
+  "value": [
+    { "id": "/subscriptions/11111111-1111-1111-1111-111111111111/providers/Microsoft.Security/pricings/VirtualMachines",      "name": "VirtualMachines",      "properties": { "pricingTier": "Free" } },
+    { "id": "/subscriptions/11111111-1111-1111-1111-111111111111/providers/Microsoft.Security/pricings/SqlServers",           "name": "SqlServers",           "properties": { "pricingTier": "Free" } },
+    { "id": "/subscriptions/11111111-1111-1111-1111-111111111111/providers/Microsoft.Security/pricings/AppServices",          "name": "AppServices",          "properties": { "pricingTier": "Free" } },
+    { "id": "/subscriptions/11111111-1111-1111-1111-111111111111/providers/Microsoft.Security/pricings/StorageAccounts",      "name": "StorageAccounts",      "properties": { "pricingTier": "Free" } },
+    { "id": "/subscriptions/11111111-1111-1111-1111-111111111111/providers/Microsoft.Security/pricings/KubernetesService",    "name": "KubernetesService",    "properties": { "pricingTier": "Free" } },
+    { "id": "/subscriptions/11111111-1111-1111-1111-111111111111/providers/Microsoft.Security/pricings/ContainerRegistry",    "name": "ContainerRegistry",    "properties": { "pricingTier": "Free" } },
+    { "id": "/subscriptions/11111111-1111-1111-1111-111111111111/providers/Microsoft.Security/pricings/KeyVaults",            "name": "KeyVaults",            "properties": { "pricingTier": "Free" } },
+    { "id": "/subscriptions/11111111-1111-1111-1111-111111111111/providers/Microsoft.Security/pricings/Dns",                  "name": "Dns",                  "properties": { "pricingTier": "Free" } },
+    { "id": "/subscriptions/11111111-1111-1111-1111-111111111111/providers/Microsoft.Security/pricings/Arm",                  "name": "Arm",                  "properties": { "pricingTier": "Free" } },
+    { "id": "/subscriptions/11111111-1111-1111-1111-111111111111/providers/Microsoft.Security/pricings/OpenSourceRelationalDatabases", "name": "OpenSourceRelationalDatabases", "properties": { "pricingTier": "Free" } },
+    { "id": "/subscriptions/11111111-1111-1111-1111-111111111111/providers/Microsoft.Security/pricings/CosmosDbs",            "name": "CosmosDbs",            "properties": { "pricingTier": "Free" } },
+    { "id": "/subscriptions/11111111-1111-1111-1111-111111111111/providers/Microsoft.Security/pricings/Containers",           "name": "Containers",           "properties": { "pricingTier": "Free" } },
+    { "id": "/subscriptions/11111111-1111-1111-1111-111111111111/providers/Microsoft.Security/pricings/CloudPosture",         "name": "CloudPosture",         "properties": { "pricingTier": "Free" } },
+    { "id": "/subscriptions/11111111-1111-1111-1111-111111111111/providers/Microsoft.Security/pricings/Api",                  "name": "Api",                  "properties": { "pricingTier": "Free" } },
+    { "id": "/subscriptions/11111111-1111-1111-1111-111111111111/providers/Microsoft.Security/pricings/AI",                   "name": "AI",                   "properties": { "pricingTier": "Free" } },
+    { "id": "/subscriptions/11111111-1111-1111-1111-111111111111/providers/Microsoft.Security/pricings/Discovery",            "name": "Discovery",            "properties": { "pricingTier": "Standard" } },
+    { "id": "/subscriptions/11111111-1111-1111-1111-111111111111/providers/Microsoft.Security/pricings/FoundationalCspm",     "name": "FoundationalCspm",     "properties": { "pricingTier": "Standard" } }
+  ]
+}

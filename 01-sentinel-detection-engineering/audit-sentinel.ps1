@@ -18,10 +18,26 @@ param (
     [Parameter(Mandatory=$true)]
     [string] $OutputJsonPath,
 
-    [string] $TenantId = $null
+    [string] $TenantId = $null,
+
+    [switch] $MockMode,
+
+    [string] $FixturesPath = (Join-Path $PSScriptRoot "..\examples\fixtures")
 )
 
 Import-Module (Join-Path $PSScriptRoot "..\lib\Finding.psm1") -Force
+if ($MockMode) {
+    Import-Module (Join-Path $PSScriptRoot "..\lib\MockClient.psm1") -Force
+    Initialize-MockClient -FixturesPath $FixturesPath
+}
+
+function Invoke-ArmGet {
+    param ([string] $Uri)
+    if ($MockMode) {
+        return Invoke-ArmMock -Uri $Uri | ConvertTo-Json -Depth 10
+    }
+    return & $az rest --method get --uri $Uri 2>&1 | Out-String
+}
 
 $az = "C:\Program Files\Microsoft SDKs\Azure\CLI2\wbin\az.cmd"
 if (-not (Test-Path $az)) { $az = "az" }
@@ -34,7 +50,7 @@ $baseWs = "https://management.azure.com/subscriptions/$SubscriptionId/resourceGr
 
 # === Workspace exists ===
 try {
-    $ws = & $az rest --method get --uri "$baseWs`?api-version=2023-09-01" 2>&1 | ConvertFrom-Json -ErrorAction Stop
+    $ws = Invoke-ArmGet -Uri "$baseWs`?api-version=2023-09-01" | ConvertFrom-Json -ErrorAction Stop
     [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "INFO" `
         -Title "Log Analytics workspace present" `
         -Description "Workspace $WorkspaceName exists in $ResourceGroup. SKU: $($ws.properties.sku.name). Retention: $($ws.properties.retentionInDays) days." `
@@ -88,7 +104,7 @@ try {
 
 # === Sentinel onboarding ===
 try {
-    $onboarding = & $az rest --method get --uri "$baseWs/providers/Microsoft.SecurityInsights/onboardingStates/default`?api-version=2024-09-01" 2>&1 | ConvertFrom-Json -ErrorAction Stop
+    $onboarding = Invoke-ArmGet -Uri "$baseWs/providers/Microsoft.SecurityInsights/onboardingStates/default`?api-version=2024-09-01" | ConvertFrom-Json -ErrorAction Stop
     [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "INFO" `
         -Title "Microsoft Sentinel onboarded on workspace" `
         -Description "Sentinel is enabled on $WorkspaceName."))
@@ -106,7 +122,7 @@ try {
 
 # === Analytics Rules count ===
 try {
-    $rules = & $az rest --method get --uri "$baseWs/providers/Microsoft.SecurityInsights/alertRules`?api-version=2024-09-01" 2>&1 | ConvertFrom-Json -ErrorAction Stop
+    $rules = Invoke-ArmGet -Uri "$baseWs/providers/Microsoft.SecurityInsights/alertRules`?api-version=2024-09-01" | ConvertFrom-Json -ErrorAction Stop
     $ruleCount = $rules.value.Count
     $enabledCount = ($rules.value | Where-Object { $_.properties.enabled }).Count
     $fusionEnabled = ($rules.value | Where-Object { $_.kind -eq "Fusion" -and $_.properties.enabled }).Count -gt 0
@@ -145,7 +161,7 @@ try {
 # === Activity Log diagnostic setting ===
 try {
     $diagUri = "https://management.azure.com/subscriptions/$SubscriptionId/providers/microsoft.insights/diagnosticSettings`?api-version=2021-05-01-preview"
-    $diag = & $az rest --method get --uri $diagUri 2>&1 | ConvertFrom-Json -ErrorAction Stop
+    $diag = Invoke-ArmGet -Uri $diagUri | ConvertFrom-Json -ErrorAction Stop
     $wiredToWs = $diag.value | Where-Object { $_.properties.workspaceId -eq $ws.id }
     if (-not $wiredToWs) {
         [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "P2" `

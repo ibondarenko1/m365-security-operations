@@ -1,0 +1,40 @@
+{
+  "value": [
+    {
+      "id": "/subscriptions/11111111/.../Microsoft.SecurityInsights/alertRules/00000000-0000-0000-0000-000000000001",
+      "name": "fusion-default",
+      "kind": "Fusion",
+      "properties": { "enabled": true, "displayName": "Advanced Multistage Attack Detection" }
+    },
+    {
+      "id": "/subscriptions/11111111/...//alertRules/00000000-0000-0000-0000-000000000002",
+      "name": "rule-2",
+      "kind": "Scheduled",
+      "properties": { "enabled": true, "displayName": "[SC200] Suspicious resource deployment by non-owner" }
+    },
+    {
+      "id": "/subscriptions/11111111/...//alertRules/00000000-0000-0000-0000-000000000003",
+      "name": "rule-3",
+      "kind": "Scheduled",
+      "properties": { "enabled": true, "displayName": "[SC200] Mass resource deletion" }
+    },
+    {
+      "id": "/subscriptions/11111111/...//alertRules/00000000-0000-0000-0000-000000000004",
+      "name": "rule-4",
+      "kind": "Scheduled",
+      "properties": { "enabled": true, "displayName": "[SC200] RBAC role assignment changes" }
+    },
+    {
+      "id": "/subscriptions/11111111/...//alertRules/00000000-0000-0000-0000-000000000005",
+      "name": "rule-5",
+      "kind": "Scheduled",
+      "properties": { "enabled": true, "displayName": "[SC200] Network Security Group rule modified" }
+    },
+    {
+      "id": "/subscriptions/11111111/...//alertRules/00000000-0000-0000-0000-000000000006",
+      "name": "rule-6",
+      "kind": "Scheduled",
+      "properties": { "enabled": true, "displayName": "[SC200] Failed Activity Log operations spike" }
+    }
+  ]
+}

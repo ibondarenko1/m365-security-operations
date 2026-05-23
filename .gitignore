@@ -11,6 +11,8 @@
 reports/
 audit-run-output*.txt
 audit-run-output*.log
+mock-run-output*.txt
+mock-run-output*.log
 
 # OS / editor
 .DS_Store

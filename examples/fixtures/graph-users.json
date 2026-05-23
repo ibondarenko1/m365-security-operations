@@ -1,0 +1,11 @@
+{
+  "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#users",
+  "value": [
+    { "id": "55555555-5555-5555-5555-550000000001", "displayName": "Admin Account",       "userPrincipalName": "admin@example.com",        "userType": "Member", "accountEnabled": true },
+    { "id": "55555555-5555-5555-5555-550000000002", "displayName": "Org Owner",           "userPrincipalName": "owner@example.com",        "userType": "Member", "accountEnabled": true },
+    { "id": "55555555-5555-5555-5555-550000000003", "displayName": "Shared Admin",        "userPrincipalName": "shared-admin@example.com", "userType": "Member", "accountEnabled": true },
+    { "id": "55555555-5555-5555-5555-550000000004", "displayName": "Operations Lead",     "userPrincipalName": "ops@example.com",          "userType": "Member", "accountEnabled": true },
+    { "id": "55555555-5555-5555-5555-550000000005", "displayName": "Finance Director",    "userPrincipalName": "finance@example.com",      "userType": "Member", "accountEnabled": true },
+    { "id": "55555555-5555-5555-5555-550000000006", "displayName": "Junior Analyst",      "userPrincipalName": "analyst@example.com",      "userType": "Member", "accountEnabled": true }
+  ]
+}

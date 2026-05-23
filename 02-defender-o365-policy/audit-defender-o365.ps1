@@ -12,14 +12,91 @@ param (
 
     [string] $TenantId = $null,
 
-    [string] $Domain = $null
+    [string] $Domain = $null,
+
+    [switch] $MockMode,
+
+    [string] $FixturesPath = (Join-Path $PSScriptRoot "..\examples\fixtures")
 )
 
 Import-Module (Join-Path $PSScriptRoot "..\lib\Finding.psm1") -Force
+if ($MockMode) {
+    Import-Module (Join-Path $PSScriptRoot "..\lib\MockClient.psm1") -Force
+    Initialize-MockClient -FixturesPath $FixturesPath
+}
 
 $findings = New-Object System.Collections.ArrayList
 $findingCounter = 0
 function Next-Id { $script:findingCounter++; return ("MAIL-{0:D3}" -f $script:findingCounter) }
+
+# In mock mode, skip EXO module + connection - all data comes from fixtures
+if ($MockMode) {
+    $antiPhish = Get-MockExoData -CmdletName "AntiPhishPolicy"
+    $tabl = Get-MockExoData -CmdletName "TenantAllowBlockList"
+    $dkim = Get-MockExoData -CmdletName "DkimSigningConfig"
+
+    $defaultPolicy = $antiPhish | Where-Object { $_.IsDefault }
+    if ($defaultPolicy) {
+        $impUsersCount = ($defaultPolicy.TargetedUsersToProtect | Measure-Object).Count
+        $impDomainsCount = ($defaultPolicy.TargetedDomainsToProtect | Measure-Object).Count
+        if ($impUsersCount -eq 0 -and $impDomainsCount -eq 0) {
+            [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "P2" `
+                -Title "Anti-phish impersonation protection not enrolled" `
+                -Description "Default anti-phish policy has zero protected users and zero protected domains. CEO-fraud, vendor-impersonation, and partner-spoof attacks rely on display-name and email-address similarity that only triggers when specific targets are enlisted." `
+                -FrameworkControls @("NIST.CSF.DE.AE-02","ISO27001.A.5.7") `
+                -RemediationArtifact "02-defender-o365-policy/templates/enable-impersonation-protection.ps1" `
+                -RemediationSteps @(
+                    "Identify high-risk users (executives, finance, IT admins).",
+                    "Run: 02-defender-o365-policy/templates/enable-impersonation-protection.ps1 -ProtectedUsers <user1>,<user2>",
+                    "Set action on detected impersonation to Quarantine."
+                )))
+        }
+    }
+
+    if ($tabl.Count -eq 0) {
+        [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "P2" `
+            -Title "Tenant Allow/Block List is empty" `
+            -Description "No entries in the Tenant Allow/Block List for senders. False-positive emails repeatedly blocked require manual re-release for each occurrence; legitimate senders with broken DKIM are blocked indefinitely." `
+            -FrameworkControls @("NIST.CSF.DE.AE-02","ISO27001.A.8.16") `
+            -RemediationArtifact "02-defender-o365-policy/templates/add-tenant-allow-list-entries.ps1" `
+            -RemediationSteps @(
+                "Review false-positive senders surfaced by KQL hunting (see 01-sentinel-detection-engineering/kql/).",
+                "Run: 02-defender-o365-policy/templates/add-tenant-allow-list-entries.ps1 -EntriesCsv allow-entries.csv"
+            )))
+    }
+
+    foreach ($d in $dkim) {
+        if ($d.Enabled) {
+            [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "INFO" `
+                -Title "DKIM enabled for $($d.Domain)" `
+                -Description "Domain $($d.Domain): Enabled = True, Status = $($d.Status)" `
+                -Evidence @{ domain = $d.Domain; enabled = $true; status = $d.Status }))
+        }
+    }
+
+    [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "P3" `
+        -Title "Strict Preset Security Policy not applied" `
+        -Description "No Strict Preset assigned to any user group. For high-risk users (executives, finance, IT), Strict Preset adds aggressive Safe Links rewrites and Safe Attachments dynamic detonation." `
+        -FrameworkControls @("NIST.CSF.PR.AC-04","MCSB.IM-6") `
+        -RemediationArtifact "02-defender-o365-policy/templates/apply-strict-preset-to-group.ps1" `
+        -RemediationSteps @(
+            "Create a security group named 'sg-high-risk-users' containing executives + finance + IT.",
+            "Run: 02-defender-o365-policy/templates/apply-strict-preset-to-group.ps1 -GroupName 'sg-high-risk-users'"
+        )))
+
+    $severityCounts = Get-FindingSeverityCount -Findings $findings
+    Write-Host ""
+    Write-Host "Defender for Office 365 audit complete (mock mode)"
+    Write-Host "  P1: $($severityCounts.P1)  P2: $($severityCounts.P2)  P3: $($severityCounts.P3)  INFO: $($severityCounts.INFO)"
+    Write-Host ""
+
+    Write-PhaseReport `
+        -Phase "defender-o365" -PhaseDisplayName "Defender for Office 365 Policy" `
+        -OutputPath $OutputJsonPath -TenantId $TenantId -Domain $Domain `
+        -AuditScriptVersion "1.0.0" -Findings $findings
+    Write-Host "Findings written to: $OutputJsonPath"
+    exit 0
+}
 
 # Check for ExchangeOnlineManagement module
 $exoModule = Get-Module -ListAvailable -Name ExchangeOnlineManagement

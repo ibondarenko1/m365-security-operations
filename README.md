@@ -2,11 +2,28 @@
 
 A detect-and-remediate toolkit for solo defenders running Microsoft 365 + Cloudflare in small organizations. Audits five domains in one command, produces a single ranked report, and ships ready-to-deploy remediation artifacts mapped to NIST CSF 2.0, NIST 800-53, ISO 27001, and MITRE ATT&CK.
 
+## Try it in 30 seconds (no Azure access needed)
+
+```powershell
+git clone https://github.com/ibondarenko1/m365-security-operations
+cd m365-security-operations
+./examples/run-mock.ps1
 ```
+
+The mock run produces a complete sample report (30 findings across 5 domains) using bundled fixtures. Open `reports/<latest-timestamp>/report.md` to see what the toolkit actually produces.
+
+See [`examples/sample-report.md`](examples/sample-report.md) for the same output rendered statically.
+
+## Run against your tenant
+
+```powershell
+az login --tenant <your-tenant-id>
 ./run-audit.ps1 -TenantId <tenant-id> -SubscriptionId <sub-id> -Domain <yourdomain>
 ```
 
-That's it. The script authenticates via your existing Azure CLI session, sweeps Sentinel, Defender for Office 365, Cloudflare DNS, Entra ID identity posture, and Defender for Cloud, then emits a markdown report under `reports/<timestamp>/report.md` ranking findings P1/P2/P3 with per-finding remediation links.
+The script authenticates via your existing Azure CLI session, sweeps Sentinel, Defender for Office 365, Cloudflare DNS, Entra ID identity posture, and Defender for Cloud, then emits a markdown report under `reports/<timestamp>/report.md` ranking findings P1/P2/P3 with per-finding remediation links.
+
+Add `-WorkspaceName <ws> -ResourceGroup <rg>` to include the Sentinel posture audit (Phase 4). Without these, Phase 4 is skipped.
 
 ---
 

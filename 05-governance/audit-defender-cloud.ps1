@@ -12,10 +12,26 @@ param (
     [Parameter(Mandatory=$true)]
     [string] $OutputJsonPath,
 
-    [string] $TenantId = $null
+    [string] $TenantId = $null,
+
+    [switch] $MockMode,
+
+    [string] $FixturesPath = (Join-Path $PSScriptRoot "..\examples\fixtures")
 )
 
 Import-Module (Join-Path $PSScriptRoot "..\lib\Finding.psm1") -Force
+if ($MockMode) {
+    Import-Module (Join-Path $PSScriptRoot "..\lib\MockClient.psm1") -Force
+    Initialize-MockClient -FixturesPath $FixturesPath
+}
+
+function Invoke-ArmGet {
+    param ([string] $Uri)
+    if ($MockMode) {
+        return Invoke-ArmMock -Uri $Uri | ConvertTo-Json -Depth 10
+    }
+    return & $az rest --method get --uri $Uri 2>&1 | Out-String
+}
 
 $az = "C:\Program Files\Microsoft SDKs\Azure\CLI2\wbin\az.cmd"
 if (-not (Test-Path $az)) { $az = "az" }
@@ -26,7 +42,7 @@ function Next-Id { $script:findingCounter++; return ("MDC-{0:D3}" -f $script:fin
 
 # === Defender plans pricing tier ===
 try {
-    $pricings = & $az rest --method get --uri "https://management.azure.com/subscriptions/$SubscriptionId/providers/Microsoft.Security/pricings`?api-version=2024-01-01" 2>&1 | ConvertFrom-Json -ErrorAction Stop
+    $pricings = Invoke-ArmGet -Uri "https://management.azure.com/subscriptions/$SubscriptionId/providers/Microsoft.Security/pricings`?api-version=2024-01-01" | ConvertFrom-Json -ErrorAction Stop
 
     $freeCount = ($pricings.value | Where-Object { $_.properties.pricingTier -eq "Free" }).Count
     $standardCount = ($pricings.value | Where-Object { $_.properties.pricingTier -eq "Standard" }).Count
@@ -64,7 +80,7 @@ try {
 
 # === Secure Score ===
 try {
-    $score = & $az rest --method get --uri "https://management.azure.com/subscriptions/$SubscriptionId/providers/Microsoft.Security/secureScores`?api-version=2020-01-01" 2>&1 | ConvertFrom-Json -ErrorAction Stop
+    $score = Invoke-ArmGet -Uri "https://management.azure.com/subscriptions/$SubscriptionId/providers/Microsoft.Security/secureScores`?api-version=2020-01-01" | ConvertFrom-Json -ErrorAction Stop
     if ($score.value -and $score.value.Count -gt 0) {
         foreach ($s in $score.value) {
             $pct = [math]::Round($s.properties.score.percentage * 100, 1)

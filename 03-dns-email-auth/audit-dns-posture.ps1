@@ -13,14 +13,25 @@ param (
     [Parameter(Mandatory=$true)]
     [string] $OutputJsonPath,
 
-    [string] $TenantId = $null
+    [string] $TenantId = $null,
+
+    [switch] $MockMode,
+
+    [string] $FixturesPath = (Join-Path $PSScriptRoot "..\examples\fixtures")
 )
 
 Import-Module (Join-Path $PSScriptRoot "..\lib\Finding.psm1") -Force
+if ($MockMode) {
+    Import-Module (Join-Path $PSScriptRoot "..\lib\MockClient.psm1") -Force
+    Initialize-MockClient -FixturesPath $FixturesPath
+}
 
 function Resolve-OrNull {
     param ([string] $Name, [string] $Type, [string] $Server)
     try {
+        if ($MockMode) {
+            return Resolve-DnsMock -Name $Name -Type $Type
+        }
         $r = Resolve-DnsName -Name $Name -Type $Type -DnsOnly -Server $Server -ErrorAction Stop
         return $r
     } catch {

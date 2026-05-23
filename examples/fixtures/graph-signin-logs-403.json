@@ -1,0 +1,6 @@
+{
+  "comment": "Simulates the 403 Forbidden response that the audit account commonly receives when lacking AuditLog.Read.All scope. Used by audit-identity-posture.ps1 to detect this gap.",
+  "error_status": 403,
+  "error_message": "Insufficient privileges to complete the operation. Requires AuditLog.Read.All or Security Reader role.",
+  "value": []
+}

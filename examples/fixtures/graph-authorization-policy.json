@@ -1,0 +1,17 @@
+{
+  "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#policies/authorizationPolicy/$entity",
+  "id": "authorizationPolicy",
+  "displayName": "Authorization Policy",
+  "description": "Used to manage authorization related settings across the company.",
+  "allowInvitesFrom": "everyone",
+  "blockMsolPowerShell": false,
+  "allowedToSignUpEmailBasedSubscriptions": true,
+  "allowedToUseSSPR": true,
+  "allowEmailVerifiedUsersToJoinOrganization": false,
+  "defaultUserRolePermissions": {
+    "allowedToCreateApps": true,
+    "allowedToCreateSecurityGroups": true,
+    "allowedToReadOtherUsers": true,
+    "allowedToReadBitlockerKeysForOwnedDevice": true
+  }
+}

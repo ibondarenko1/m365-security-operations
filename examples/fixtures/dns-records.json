@@ -1,0 +1,44 @@
+{
+  "comment": "Aggregated DNS resolution results for example.com mock tenant. Each key is a (name, type) tuple representing what Resolve-DnsName would return. NXDOMAIN values are null.",
+  "mx": {
+    "name": "example.com",
+    "type": "MX",
+    "records": [
+      { "preference": 0, "nameExchange": "example-com.mail.protection.outlook.com" }
+    ]
+  },
+  "spf": {
+    "name": "example.com",
+    "type": "TXT",
+    "txt": "v=spf1 include:spf.protection.outlook.com -all"
+  },
+  "dmarc": {
+    "name": "_dmarc.example.com",
+    "type": "TXT",
+    "txt": "v=DMARC1; p=reject; rua=mailto:dmarc@example.com"
+  },
+  "dkim-selector1": {
+    "name": "selector1._domainkey.example.com",
+    "type": "CNAME",
+    "target": "selector1-example-com._domainkey.example.onmicrosoft.com"
+  },
+  "dkim-selector2": {
+    "name": "selector2._domainkey.example.com",
+    "type": "CNAME",
+    "target": "selector2-example-com._domainkey.example.onmicrosoft.com"
+  },
+  "mta-sts-txt": { "name": "_mta-sts.example.com", "type": "TXT", "txt": null, "nxdomain": true },
+  "mta-sts-host": { "name": "mta-sts.example.com", "type": "CNAME", "target": null, "nxdomain": true },
+  "tls-rpt": { "name": "_smtp._tls.example.com", "type": "TXT", "txt": null, "nxdomain": true },
+  "bimi": { "name": "default._bimi.example.com", "type": "TXT", "txt": null, "nxdomain": true },
+  "autodiscover": {
+    "name": "autodiscover.example.com",
+    "type": "CNAME",
+    "target": "autodiscover.outlook.com"
+  },
+  "ns": {
+    "name": "example.com",
+    "type": "NS",
+    "records": ["ns1.example-dns-provider.com", "ns2.example-dns-provider.com"]
+  }
+}

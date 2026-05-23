@@ -1,0 +1,6 @@
+{
+  "id": "/subscriptions/11111111-1111-1111-1111-111111111111/resourceGroups/example-rg/providers/Microsoft.OperationalInsights/workspaces/example-ws/providers/Microsoft.SecurityInsights/onboardingStates/default",
+  "name": "default",
+  "type": "Microsoft.SecurityInsights/onboardingStates",
+  "properties": {}
+}
