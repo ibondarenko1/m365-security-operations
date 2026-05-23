@@ -1,5 +1,12 @@
 # M365 Security Operations Toolkit
 
+[![CI](https://github.com/ibondarenko1/m365-security-operations/actions/workflows/ci.yml/badge.svg)](https://github.com/ibondarenko1/m365-security-operations/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/ibondarenko1/m365-security-operations?display_name=tag&color=blue)](https://github.com/ibondarenko1/m365-security-operations/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![PowerShell](https://img.shields.io/badge/PowerShell-5.1%20%7C%207%2B-blue.svg)](https://learn.microsoft.com/en-us/powershell)
+[![Mock mode](https://img.shields.io/badge/mock--mode-30%20second%20demo-brightgreen)](examples/run-mock.ps1)
+[![Pester](https://img.shields.io/badge/Pester-114%20tests%20passing-success)](tests/)
+
 A detect-and-remediate toolkit for solo defenders running Microsoft 365 + Cloudflare in small organizations. Audits five domains in one command, produces a single ranked report, and ships ready-to-deploy remediation artifacts mapped to NIST CSF 2.0, NIST 800-53, ISO 27001, and MITRE ATT&CK.
 
 ## Try it in 30 seconds (no Azure access needed)
