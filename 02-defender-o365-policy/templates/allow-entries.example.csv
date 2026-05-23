@@ -1,0 +1,4 @@
+Type,Value,ExpirationDays,Notes
+Sender,marketing@example-saas.com,90,Marketing cold-outreach with broken DKIM - confirmed legit
+Sender,webcontact@example-vendor.com,90,GoDaddy contact-form relay pattern
+Url,https://click.example-tracker.com/*,30,Newsletter tracking redirector

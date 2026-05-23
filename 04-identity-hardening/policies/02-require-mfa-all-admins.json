@@ -1,0 +1,43 @@
+{
+  "displayName": "[Baseline] Require phishing-resistant MFA for all admins",
+  "state": "enabledForReportingButNotEnforced",
+  "conditions": {
+    "users": {
+      "includeRoles": [
+        "62e90394-69f5-4237-9190-012177145e10",
+        "194ae4cb-b126-40b2-bd5b-6091b380977d",
+        "f28a1f50-f6e7-4571-818b-6a12f2af6b6c",
+        "29232cdf-9323-42fd-ade2-1d097af3e4de",
+        "b0f54661-2d74-4c50-afa3-1ec803f12efe",
+        "fe930be7-5e62-47db-91af-98c3a49a38b1",
+        "729827e3-9c14-49f7-bb1b-9608f156bbb8",
+        "966707d0-3269-4727-9be2-8c3a10f19b9d",
+        "7be44c8a-adaf-4e2a-84d6-ab2649e08a13",
+        "e8611ab8-c189-46e8-94e1-60213ab1f814"
+      ],
+      "excludeUsers": ["<user-id-break-glass>"]
+    },
+    "applications": {
+      "includeApplications": ["All"]
+    }
+  },
+  "grantControls": {
+    "operator": "AND",
+    "builtInControls": ["mfa"],
+    "authenticationStrength": {
+      "id": "00000000-0000-0000-0000-000000000004"
+    }
+  },
+  "_metadata": {
+    "purpose": "Force phishing-resistant MFA (FIDO2 / Windows Hello / Certificate-based) for all directory role holders. Highest-value compromise targets get the strongest auth requirement.",
+    "framework_controls": ["NIST.CSF.PR.AC-06","NIST.CSF.PR.AC-07","NIST.800-53.IA-2(1)","NIST.800-63B.AAL3","ISO27001.A.5.17","MCSB.IM-6"],
+    "deployment_notes": [
+      "The includeRoles array lists template IDs for: Global Administrator, Application Administrator, Authentication Administrator, Billing Administrator, Cloud Application Administrator, Conditional Access Administrator, Exchange Administrator, Helpdesk Administrator, Password Administrator, Privileged Authentication Administrator.",
+      "Add or remove role template IDs per your tenant's admin role usage.",
+      "authenticationStrength id 00000000-0000-0000-0000-000000000004 = Phishing-resistant MFA (built-in).",
+      "Replace <user-id-break-glass> with the object ID of your break-glass account. Break-glass is excluded by design — it must be reachable when MFA infrastructure fails.",
+      "Deploy in report-only first. Confirm all admins have registered FIDO2 or Windows Hello before switching to 'enabled'.",
+      "Reference: https://learn.microsoft.com/en-us/entra/identity/authentication/concept-authentication-strengths"
+    ]
+  }
+}

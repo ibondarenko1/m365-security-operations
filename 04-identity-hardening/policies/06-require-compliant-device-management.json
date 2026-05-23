@@ -1,0 +1,37 @@
+{
+  "displayName": "[Baseline] Require compliant device for management portals",
+  "state": "enabledForReportingButNotEnforced",
+  "conditions": {
+    "users": {
+      "includeRoles": [
+        "62e90394-69f5-4237-9190-012177145e10",
+        "194ae4cb-b126-40b2-bd5b-6091b380977d",
+        "29232cdf-9323-42fd-ade2-1d097af3e4de",
+        "fe930be7-5e62-47db-91af-98c3a49a38b1"
+      ],
+      "excludeUsers": ["<user-id-break-glass>"]
+    },
+    "applications": {
+      "includeApplications": [
+        "797f4846-ba00-4fd7-ba43-dac1f8f63013",
+        "c44b4083-3bb0-49c1-b47d-974e53cbdf3c",
+        "00000007-0000-0000-c000-000000000000"
+      ]
+    }
+  },
+  "grantControls": {
+    "operator": "AND",
+    "builtInControls": ["compliantDevice","mfa"]
+  },
+  "_metadata": {
+    "purpose": "Restrict access to Azure management portals, Entra admin center, and Defender admin to compliant (Intune-managed) devices only. Prevents admins from logging into management surfaces from personal or untrusted devices.",
+    "framework_controls": ["NIST.CSF.PR.AC-04","NIST.CSF.PR.PT-04","NIST.800-53.AC-3","NIST.800-53.AC-19","ISO27001.A.5.15","MCSB.IM-7"],
+    "deployment_notes": [
+      "Requires Intune licensing AND admin devices enrolled in Intune compliance policies.",
+      "includeRoles: Global Admin, App Admin, Exchange Admin, Cloud App Admin. Add others as needed.",
+      "includeApplications: Microsoft Azure Management (797f4846), Microsoft Graph (c44b4083), Microsoft Defender XDR (00000007).",
+      "If org has no MDM in place: defer this policy until Intune compliance baseline is established.",
+      "Alternative for non-Intune orgs: use 'requireApprovedClientApp' or named-location restriction instead of compliantDevice."
+    ]
+  }
+}

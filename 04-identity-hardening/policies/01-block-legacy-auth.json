@@ -1,0 +1,32 @@
+{
+  "displayName": "[Baseline] Block legacy authentication",
+  "state": "enabledForReportingButNotEnforced",
+  "conditions": {
+    "users": {
+      "includeUsers": ["All"],
+      "excludeUsers": [],
+      "excludeGroups": ["<group-id-break-glass>"]
+    },
+    "applications": {
+      "includeApplications": ["All"]
+    },
+    "clientAppTypes": [
+      "exchangeActiveSync",
+      "other"
+    ]
+  },
+  "grantControls": {
+    "operator": "OR",
+    "builtInControls": ["block"]
+  },
+  "_metadata": {
+    "purpose": "Block legacy authentication protocols (POP, IMAP, SMTP-Basic, MAPI, EWS-Basic) that cannot enforce MFA.",
+    "framework_controls": ["NIST.CSF.PR.AC-07","NIST.800-53.IA-2(1)","NIST.800-53.IA-2(2)","NIST.800-63B.AAL2","ISO27001.A.5.17"],
+    "deployment_notes": [
+      "Replace <group-id-break-glass> with the object ID of your break-glass account exclusion group.",
+      "Start in enabledForReportingButNotEnforced (report-only) mode. Monitor sign-in logs for legitimate legacy clients.",
+      "After 7-14 days with no legitimate hits, switch state to 'enabled'.",
+      "Common legitimate legacy clients to identify: old iOS Mail app, printers/MFPs using SMTP-Basic, line-of-business apps using EWS-Basic. Migrate or whitelist before enforcing."
+    ]
+  }
+}

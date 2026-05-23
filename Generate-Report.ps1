@@ -1,0 +1,180 @@
+# Generate-Report.ps1
+# Aggregate all per-phase JSON findings in reports/<timestamp>/ into a single markdown report.
+# Usage: .\Generate-Report.ps1 -ReportsDir reports/2026-05-22T18-30-12
+
+[CmdletBinding()]
+param (
+    [Parameter(Mandatory=$true)]
+    [string] $ReportsDir
+)
+
+if (-not (Test-Path $ReportsDir)) {
+    Write-Error "Reports directory not found: $ReportsDir"
+    exit 1
+}
+
+$jsonFiles = Get-ChildItem -Path $ReportsDir -Filter "*.json" -File
+if ($jsonFiles.Count -eq 0) {
+    Write-Error "No JSON findings files found in $ReportsDir"
+    exit 1
+}
+
+$phases = @()
+foreach ($f in $jsonFiles) {
+    try {
+        $obj = Get-Content $f.FullName -Raw | ConvertFrom-Json
+        $phases += $obj
+    } catch {
+        Write-Warning "Skipping malformed JSON: $($f.Name): $($_.Exception.Message)"
+    }
+}
+
+# Aggregate stats
+$allFindings = @()
+foreach ($p in $phases) { $allFindings += $p.findings }
+
+$counts = [ordered]@{ P1=0; P2=0; P3=0; INFO=0; OUT_OF_SCOPE=0 }
+foreach ($f in $allFindings) { if ($counts.Contains($f.severity)) { $counts[$f.severity]++ } }
+
+# Unique framework controls touched
+$allControls = @()
+foreach ($f in $allFindings) { if ($f.framework_controls) { $allControls += $f.framework_controls } }
+$controlsByFramework = $allControls | Group-Object { ($_ -split '\.')[0] + '.' + ($_ -split '\.')[1] } | Sort-Object Name
+
+# Output buffer
+$sb = New-Object System.Text.StringBuilder
+function W { param ($Line) [void]$sb.AppendLine($Line) }
+
+W "# Security Posture Report"
+W ""
+$ts = if ($phases.Count -gt 0) { $phases[0].timestamp_utc } else { (Get-Date).ToUniversalTime().ToString("o") }
+W "Generated: $ts"
+W ""
+if ($phases.Count -gt 0 -and $phases[0].tenant_id) { W "Tenant: ``$($phases[0].tenant_id)``" }
+if ($phases.Count -gt 0 -and $phases[0].subscription_id) { W "Subscription: ``$($phases[0].subscription_id)``" }
+if ($phases.Count -gt 0 -and $phases[0].domain) { W "Domain: ``$($phases[0].domain)``" }
+W ""
+W "---"
+W ""
+
+# Executive summary
+W "## Executive summary"
+W ""
+W "| Severity | Count | Action window |"
+W "|---|---|---|"
+W "| **P1** (immediate operational risk) | $($counts.P1) | within 1 week |"
+W "| **P2** (defense-in-depth gap) | $($counts.P2) | within 30 days |"
+W "| **P3** (hygiene / optional) | $($counts.P3) | within 90 days |"
+W "| INFO (posture context) | $($counts.INFO) | - |"
+W "| OUT_OF_SCOPE | $($counts.OUT_OF_SCOPE) | - |"
+W ""
+
+# Top 3 P1
+$p1 = $allFindings | Where-Object { $_.severity -eq "P1" } | Select-Object -First 3
+if ($p1.Count -gt 0) {
+    W "### Top P1 findings"
+    W ""
+    foreach ($f in $p1) {
+        W "- **$($f.id):** $($f.title)"
+    }
+    W ""
+}
+
+W "---"
+W ""
+
+# Per-phase sections
+foreach ($p in $phases) {
+    W "## $($p.phase_display_name)"
+    W ""
+    W "Audit script version: ``$($p.audit_script_version)``. Schema version: ``$($p.schema_version)``."
+    W ""
+    if ($p.findings.Count -eq 0) {
+        W "_No findings reported._"
+        W ""
+        continue
+    }
+
+    W "| ID | Severity | Title | Framework controls | Remediation |"
+    W "|---|---|---|---|---|"
+    foreach ($f in $p.findings) {
+        $controls = if ($f.framework_controls) { ($f.framework_controls -join ", ") } else { "-" }
+        $rem = if ($f.remediation_artifact) { "[``$($f.remediation_artifact)``]($($f.remediation_artifact))" } else { "manual" }
+        $title = $f.title -replace '\|','\|'
+        $controls = $controls -replace '\|','\|'
+        W "| $($f.id) | $($f.severity) | $title | $controls | $rem |"
+    }
+    W ""
+
+    # Findings with detail (P1/P2/P3 only)
+    $detailFindings = $p.findings | Where-Object { $_.severity -in @("P1","P2","P3") }
+    if ($detailFindings.Count -gt 0) {
+        W "### Details"
+        W ""
+        foreach ($f in $detailFindings) {
+            W "#### $($f.id): $($f.title)"
+            W ""
+            W "_Severity: **$($f.severity)**_"
+            W ""
+            W "$($f.description)"
+            W ""
+            if ($f.remediation_steps -and $f.remediation_steps.Count -gt 0) {
+                W "**Remediation steps:**"
+                W ""
+                $i = 1
+                foreach ($s in $f.remediation_steps) {
+                    W "$i. $s"
+                    $i++
+                }
+                W ""
+            }
+        }
+    }
+    W "---"
+    W ""
+}
+
+# Consolidated ranked gap list
+W "## Consolidated ranked gap list"
+W ""
+foreach ($sev in @("P1","P2","P3")) {
+    $gapsThisSev = $allFindings | Where-Object { $_.severity -eq $sev }
+    if ($gapsThisSev.Count -eq 0) { continue }
+    W "### $sev"
+    W ""
+    foreach ($g in $gapsThisSev) {
+        $rem = if ($g.remediation_artifact) { " — see ``$($g.remediation_artifact)``" } else { "" }
+        W "- **$($g.id):** $($g.title)$rem"
+    }
+    W ""
+}
+
+W "---"
+W ""
+
+# Framework coverage matrix
+W "## Framework coverage matrix"
+W ""
+W "Framework controls touched by at least one finding (open or info-level posture confirmation):"
+W ""
+W "| Framework | Controls touched | Open issues (P1/P2/P3) |"
+W "|---|---|---|"
+foreach ($fw in $controlsByFramework) {
+    $fwControls = $fw.Group | Sort-Object -Unique
+    $openOnFw = ($allFindings | Where-Object {
+        $_.severity -in @("P1","P2","P3") -and
+        ($_.framework_controls | Where-Object { $_ -like "$($fw.Name).*" }).Count -gt 0
+    }).Count
+    W "| **$($fw.Name)** | $($fwControls.Count) | $openOnFw |"
+}
+W ""
+
+W "---"
+W ""
+W "_Generated by Generate-Report.ps1. Source data: $ReportsDir_"
+
+$outPath = Join-Path $ReportsDir "report.md"
+$sb.ToString() | Set-Content -Path $outPath -Encoding utf8
+Write-Host ""
+Write-Host "Report written: $outPath" -ForegroundColor Green
+Write-Host "Open with: code $outPath"

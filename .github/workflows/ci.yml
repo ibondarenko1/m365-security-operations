@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    name: Validate JSON + PowerShell + KQL
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate JSON files
+        run: |
+          set -e
+          fail=0
+          for f in $(find . -name "*.json" -not -path "./node_modules/*" -not -path "./reports/*"); do
+            if ! python3 -m json.tool "$f" > /dev/null 2>&1; then
+              echo "INVALID JSON: $f"
+              fail=1
+            fi
+          done
+          if [ $fail -eq 1 ]; then exit 1; fi
+          echo "All JSON files valid."
+
+      - name: Validate PowerShell scripts (PSScriptAnalyzer)
+        shell: pwsh
+        run: |
+          Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
+          $results = Get-ChildItem -Path . -Recurse -Include *.ps1,*.psm1 |
+            Where-Object { $_.FullName -notmatch '\\reports\\' } |
+            ForEach-Object { Invoke-ScriptAnalyzer -Path $_.FullName -Severity Error }
+          if ($results) {
+            $results | Format-Table -AutoSize
+            Write-Error "PSScriptAnalyzer found errors"
+            exit 1
+          }
+          Write-Host "All PowerShell scripts pass PSScriptAnalyzer (Error severity)."
+
+      - name: Validate KQL files exist and are non-empty
+        run: |
+          set -e
+          fail=0
+          for f in $(find 01-sentinel-detection-engineering/kql -name "*.kql" 2>/dev/null || true); do
+            if [ ! -s "$f" ]; then
+              echo "EMPTY KQL: $f"
+              fail=1
+            fi
+          done
+          if [ $fail -eq 1 ]; then exit 1; fi
+          kqlCount=$(find 01-sentinel-detection-engineering/kql -name "*.kql" 2>/dev/null | wc -l)
+          echo "Validated $kqlCount KQL files."
+
+      - name: Check for accidentally-committed tenant data
+        run: |
+          set -e
+          # Reject committed GUIDs that match common tenant/sub/user patterns
+          # except in known-safe contexts (sample-report.md uses placeholder GUIDs)
+          fail=0
+          while IFS= read -r line; do
+            file=$(echo "$line" | cut -d: -f1)
+            if [[ "$file" == "examples/sample-report.md" ]]; then continue; fi
+            if [[ "$file" == "SCHEMA.md" ]]; then continue; fi
+            if [[ "$file" == *".md" && "$(echo "$line" | grep -oE 'placeholder|example|<.*>|TODO')" ]]; then continue; fi
+            echo "POSSIBLE TENANT DATA: $line"
+            fail=1
+          done < <(grep -rE '\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b' \
+              --include="*.json" --include="*.md" --include="*.ps1" --include="*.psm1" \
+              --exclude-dir=reports --exclude-dir=.git . | \
+              grep -v "00000000-0000-0000-0000-000000000000" | \
+              grep -v "11111111-1111-1111-1111-111111111111" | \
+              grep -v "62e90394-69f5-4237-9190-012177145e10" | \
+              grep -v "194ae4cb-b126-40b2-bd5b-6091b380977d" || true)
+          if [ $fail -eq 1 ]; then
+            echo "WARNING: GUIDs that look like tenant data committed. Review carefully."
+          fi
+          echo "Tenant data check complete (warnings only — review manually)."

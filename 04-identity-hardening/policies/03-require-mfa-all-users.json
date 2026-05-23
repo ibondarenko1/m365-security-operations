@@ -1,0 +1,37 @@
+{
+  "displayName": "[Baseline] Require MFA for all users",
+  "state": "enabledForReportingButNotEnforced",
+  "conditions": {
+    "users": {
+      "includeUsers": ["All"],
+      "excludeUsers": ["<user-id-break-glass>"],
+      "excludeGroups": ["<group-id-service-accounts>"]
+    },
+    "applications": {
+      "includeApplications": ["All"]
+    },
+    "clientAppTypes": ["all"]
+  },
+  "grantControls": {
+    "operator": "AND",
+    "builtInControls": ["mfa"]
+  },
+  "sessionControls": {
+    "signInFrequency": {
+      "value": 30,
+      "type": "days",
+      "isEnabled": true
+    }
+  },
+  "_metadata": {
+    "purpose": "Baseline MFA enforcement for all users on all cloud applications. Sign-in frequency capped at 30 days to balance security and friction.",
+    "framework_controls": ["NIST.CSF.PR.AC-07","NIST.800-53.IA-2(2)","NIST.800-63B.AAL2","ISO27001.A.5.17"],
+    "deployment_notes": [
+      "Replace <user-id-break-glass> with break-glass account object ID.",
+      "Replace <group-id-service-accounts> with a security group containing all service accounts (no human users). Service accounts use other auth (managed identities, certificate auth).",
+      "If no service-account exclusion group exists, create one: az ad group create --display-name 'sg-service-accounts' --mail-nickname 'sg-service-accounts'",
+      "Deploy in report-only. After all users register MFA methods, switch to 'enabled'.",
+      "Pair with 'Require MFA registration' policy enforced at user creation (managed via Identity Protection)."
+    ]
+  }
+}

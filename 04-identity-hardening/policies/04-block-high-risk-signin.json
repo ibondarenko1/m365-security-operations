@@ -1,0 +1,28 @@
+{
+  "displayName": "[Baseline] Block high-risk sign-ins",
+  "state": "enabledForReportingButNotEnforced",
+  "conditions": {
+    "users": {
+      "includeUsers": ["All"],
+      "excludeUsers": ["<user-id-break-glass>"]
+    },
+    "applications": {
+      "includeApplications": ["All"]
+    },
+    "signInRiskLevels": ["high"]
+  },
+  "grantControls": {
+    "operator": "OR",
+    "builtInControls": ["block"]
+  },
+  "_metadata": {
+    "purpose": "Block sign-ins flagged as high-risk by Entra Identity Protection (impossible travel, anonymous IP, leaked credentials, malware-linked IP, etc).",
+    "framework_controls": ["NIST.CSF.PR.AC-06","NIST.CSF.DE.AE-02","NIST.800-53.IA-2(1)","ISO27001.A.5.17"],
+    "deployment_notes": [
+      "Requires Entra ID P2 licensing or Microsoft 365 E5 (Identity Protection feature).",
+      "If on lower license tier, this policy will not have access to sign-in risk evaluation — defer until license upgrade.",
+      "Replace <user-id-break-glass>.",
+      "Alternative for orgs without P2: use 'Require MFA' grantControl instead of block. MFA still meaningfully reduces risk for medium-risk sign-ins."
+    ]
+  }
+}

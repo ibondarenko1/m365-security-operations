@@ -1,0 +1,107 @@
+# audit-defender-cloud.ps1
+# Microsoft Defender for Cloud posture audit via Azure REST API.
+# Reports: per-plan pricing tier (Free vs Standard), Secure Score current/max,
+# recommendation count by severity, summary counts only.
+# Usage: .\audit-defender-cloud.ps1 -SubscriptionId <id> -OutputJsonPath reports/<timestamp>/defender-cloud.json
+
+[CmdletBinding()]
+param (
+    [Parameter(Mandatory=$true)]
+    [string] $SubscriptionId,
+
+    [Parameter(Mandatory=$true)]
+    [string] $OutputJsonPath,
+
+    [string] $TenantId = $null
+)
+
+Import-Module (Join-Path $PSScriptRoot "..\lib\Finding.psm1") -Force
+
+$az = "C:\Program Files\Microsoft SDKs\Azure\CLI2\wbin\az.cmd"
+if (-not (Test-Path $az)) { $az = "az" }
+
+$findings = New-Object System.Collections.ArrayList
+$findingCounter = 0
+function Next-Id { $script:findingCounter++; return ("MDC-{0:D3}" -f $script:findingCounter) }
+
+# === Defender plans pricing tier ===
+try {
+    $pricings = & $az rest --method get --uri "https://management.azure.com/subscriptions/$SubscriptionId/providers/Microsoft.Security/pricings`?api-version=2024-01-01" 2>&1 | ConvertFrom-Json -ErrorAction Stop
+
+    $freeCount = ($pricings.value | Where-Object { $_.properties.pricingTier -eq "Free" }).Count
+    $standardCount = ($pricings.value | Where-Object { $_.properties.pricingTier -eq "Standard" }).Count
+
+    [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "INFO" `
+        -Title "Defender for Cloud plans inventory" `
+        -Description "Free tier plans: $freeCount. Standard tier plans: $standardCount." `
+        -Evidence @{ free_count = $freeCount; standard_count = $standardCount; plans = ($pricings.value | ForEach-Object { @{ name = $_.name; tier = $_.properties.pricingTier } }) }))
+
+    # Flag high-impact plans that are still Free
+    $criticalPlans = @("FoundationalCspm","CloudPosture","KeyVaults","Arm","Storage")
+    foreach ($plan in $pricings.value) {
+        if ($criticalPlans -contains $plan.name -and $plan.properties.pricingTier -eq "Free") {
+            $severity = "P3"
+            # FoundationalCspm and CloudPosture have free promotions typically — keep as INFO
+            if ($plan.name -in @("FoundationalCspm","CloudPosture")) {
+                continue
+            }
+            [void]$findings.Add((New-Finding -Id (Next-Id) -Severity $severity `
+                -Title "Defender plan on Free tier: $($plan.name)" `
+                -Description "$($plan.name) plan is on Free tier. Free provides basic posture only; threat detection, JIT VM access, vulnerability scanning require Standard. Acceptable for tenants without workloads of this type." `
+                -FrameworkControls @("MCSB.LT-1","NIST.CSF.DE.CM-04") `
+                -RemediationSteps @(
+                    "Evaluate whether tenant has workloads of this type that need advanced detection.",
+                    "If yes: az security pricing create --name $($plan.name) --tier Standard",
+                    "If no workloads: keep Free, document as accepted risk."
+                )))
+        }
+    }
+} catch {
+    [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "P3" `
+        -Title "Defender for Cloud pricing enumeration failed" `
+        -Description "Error: $($_.Exception.Message). Audit account may lack Microsoft.Security/pricings/read."))
+}
+
+# === Secure Score ===
+try {
+    $score = & $az rest --method get --uri "https://management.azure.com/subscriptions/$SubscriptionId/providers/Microsoft.Security/secureScores`?api-version=2020-01-01" 2>&1 | ConvertFrom-Json -ErrorAction Stop
+    if ($score.value -and $score.value.Count -gt 0) {
+        foreach ($s in $score.value) {
+            $pct = [math]::Round($s.properties.score.percentage * 100, 1)
+            $sev = if ($pct -lt 50) { "P2" } elseif ($pct -lt 80) { "P3" } else { "INFO" }
+            [void]$findings.Add((New-Finding -Id (Next-Id) -Severity $sev `
+                -Title "Secure Score: $($s.name) at $pct%" `
+                -Description "Current: $($s.properties.score.current). Max: $($s.properties.score.max). Percentage: $pct%." `
+                -FrameworkControls @("MCSB.PV-1","NIST.CSF.ID.RA-01") `
+                -RemediationSteps @(
+                    "Review individual recommendations in Defender for Cloud portal.",
+                    "Each recommendation has framework controls and remediation steps via Microsoft documentation."
+                ) `
+                -Evidence @{ score_name = $s.name; current = $s.properties.score.current; max = $s.properties.score.max; pct = $pct }))
+        }
+    } else {
+        [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "INFO" `
+            -Title "Secure Score not yet calculated" `
+            -Description "secureScores endpoint returned empty. Defender for Cloud may still be provisioning posture data (typically 24-48 hours after subscription activation)."))
+    }
+} catch {
+    [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "P3" -Title "Secure Score read failed" -Description "Error: $($_.Exception.Message)"))
+}
+
+# === Final write ===
+$severityCounts = Get-FindingSeverityCount -Findings $findings
+Write-Host ""
+Write-Host "Defender for Cloud audit complete"
+Write-Host "  P1: $($severityCounts.P1)  P2: $($severityCounts.P2)  P3: $($severityCounts.P3)  INFO: $($severityCounts.INFO)"
+Write-Host ""
+
+Write-PhaseReport `
+    -Phase "defender-cloud" `
+    -PhaseDisplayName "Defender for Cloud Posture" `
+    -OutputPath $OutputJsonPath `
+    -TenantId $TenantId `
+    -SubscriptionId $SubscriptionId `
+    -AuditScriptVersion "1.0.0" `
+    -Findings $findings
+
+Write-Host "Findings written to: $OutputJsonPath"
