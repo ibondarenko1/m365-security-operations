@@ -16,7 +16,7 @@ function New-Finding {
         [Parameter(Mandatory)] [string] $Title,
         [Parameter(Mandatory)] [string] $Description,
         [string[]] $FrameworkControls = @(),
-        [string] $RemediationArtifact = $null,
+        $RemediationArtifact = $null,
         [string[]] $RemediationSteps = @(),
         [hashtable] $Evidence = $null
     )

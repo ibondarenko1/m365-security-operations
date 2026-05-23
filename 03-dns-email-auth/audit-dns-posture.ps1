@@ -180,8 +180,8 @@ if (-not $mtaStsTxt -or -not $mtaStsHost) {
         -FrameworkControls @("NIST.CSF.PR.DS-02","RFC.8461","ISO27001.A.8.20") `
         -RemediationArtifact "03-dns-email-auth/templates/mta-sts-policy.txt" `
         -RemediationSteps @(
-            "Add TXT record at _mta-sts.$Domain: v=STSv1; id=$(([guid]::NewGuid().ToString('N').Substring(0,16)))",
-            "Set up HTTPS endpoint at mta-sts.$Domain serving /.well-known/mta-sts.txt with policy content (see template).",
+            "Add TXT record at _mta-sts.${Domain}: v=STSv1; id=$(([guid]::NewGuid().ToString('N').Substring(0,16)))",
+            "Set up HTTPS endpoint at mta-sts.${Domain} serving /.well-known/mta-sts.txt with policy content (see template).",
             "Use Cloudflare Worker template at 03-dns-email-auth/templates/cloudflare-worker.js if hosting on Cloudflare.",
             "Verify with https://aykira.io/mta-sts or similar MTA-STS validator."
         )))
@@ -196,7 +196,7 @@ if (-not $tlsRpt) {
         -FrameworkControls @("NIST.CSF.DE.CM-04","RFC.8460","ISO27001.A.8.20") `
         -RemediationArtifact "03-dns-email-auth/templates/" `
         -RemediationSteps @(
-            "Add TXT record at _smtp._tls.$Domain: v=TLSRPTv1; rua=mailto:tls-rpt@$Domain",
+            "Add TXT record at _smtp._tls.${Domain}: v=TLSRPTv1; rua=mailto:tls-rpt@${Domain}",
             "Configure the reporting mailbox to receive aggregate reports (typically daily)."
         )))
 }
@@ -212,7 +212,7 @@ if (-not $bimi) {
         -RemediationSteps @(
             "Defer unless brand-impersonation is a problem.",
             "If pursuing: obtain VMC from DigiCert or Entrust.",
-            "Add TXT at default._bimi.$Domain: v=BIMI1; l=https://example.com/logo.svg; a=https://example.com/vmc.pem"
+            "Add TXT at default._bimi.${Domain}: v=BIMI1; l=https://example.com/logo.svg; a=https://example.com/vmc.pem"
         )))
 }
 

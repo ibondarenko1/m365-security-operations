@@ -7,6 +7,11 @@
 *-INTERNAL-*
 *-REDACTED-*
 
+# Audit output directories - contain real tenant data
+reports/
+audit-run-output*.txt
+audit-run-output*.log
+
 # OS / editor
 .DS_Store
 Thumbs.db

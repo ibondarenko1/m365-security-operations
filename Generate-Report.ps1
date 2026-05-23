@@ -50,9 +50,20 @@ W ""
 $ts = if ($phases.Count -gt 0) { $phases[0].timestamp_utc } else { (Get-Date).ToUniversalTime().ToString("o") }
 W "Generated: $ts"
 W ""
-if ($phases.Count -gt 0 -and $phases[0].tenant_id) { W "Tenant: ``$($phases[0].tenant_id)``" }
-if ($phases.Count -gt 0 -and $phases[0].subscription_id) { W "Subscription: ``$($phases[0].subscription_id)``" }
-if ($phases.Count -gt 0 -and $phases[0].domain) { W "Domain: ``$($phases[0].domain)``" }
+function Get-FirstNonEmpty {
+    param ([string] $Field)
+    foreach ($p in $phases) {
+        $v = $p.$Field
+        if ($v -and $v -ne "") { return $v }
+    }
+    return $null
+}
+$tenantId = Get-FirstNonEmpty "tenant_id"
+$subId    = Get-FirstNonEmpty "subscription_id"
+$domain   = Get-FirstNonEmpty "domain"
+if ($tenantId) { W "Tenant: ``$tenantId``" }
+if ($subId)    { W "Subscription: ``$subId``" }
+if ($domain)   { W "Domain: ``$domain``" }
 W ""
 W "---"
 W ""

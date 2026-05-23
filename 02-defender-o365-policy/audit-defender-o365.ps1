@@ -123,7 +123,7 @@ try {
     foreach ($d in $dkim) {
         if (-not $d.Enabled) {
             [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "P1" `
-                -Title "DKIM not enabled for domain" `
+                -Title "DKIM not enabled for $($d.Domain)" `
                 -Description "DKIM signing is disabled for $($d.Domain). Outbound mail from this domain cannot be DKIM-validated. DMARC alignment will fail." `
                 -FrameworkControls @("NIST.CSF.PR.DS-02","NIST.800-177.Section-4.5","ISO27001.A.8.20") `
                 -RemediationArtifact $null `
@@ -135,8 +135,8 @@ try {
                 -Evidence @{ domain = $d.Domain; enabled = $d.Enabled; status = $d.Status }))
         } else {
             [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "INFO" `
-                -Title "DKIM enabled for domain" `
-                -Description "$($d.Domain): Enabled, Status: $($d.Status)" `
+                -Title "DKIM enabled for $($d.Domain)" `
+                -Description "Domain $($d.Domain): Enabled = True, Status = $($d.Status)" `
                 -Evidence @{ domain = $d.Domain; enabled = $true; status = $d.Status }))
         }
     }
