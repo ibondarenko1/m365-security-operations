@@ -5,7 +5,9 @@
 [CmdletBinding()]
 param (
     [Parameter(Mandatory=$true)]
-    [string] $ReportsDir
+    [string] $ReportsDir,
+
+    [string] $CompareWith = $null
 )
 
 if (-not (Test-Path $ReportsDir)) {
@@ -79,6 +81,70 @@ W "| **P3** (hygiene / optional) | $($counts.P3) | within 90 days |"
 W "| INFO (posture context) | $($counts.INFO) | - |"
 W "| OUT_OF_SCOPE | $($counts.OUT_OF_SCOPE) | - |"
 W ""
+
+# Severity histogram (ASCII)
+$maxCount = ($counts.Values | Measure-Object -Maximum).Maximum
+if ($maxCount -gt 0) {
+    W "### Severity distribution"
+    W ""
+    W '```'
+    foreach ($sev in @("P1","P2","P3","INFO","OUT_OF_SCOPE")) {
+        $c = $counts[$sev]
+        $barLen = if ($maxCount -gt 0) { [math]::Round(($c / $maxCount) * 30) } else { 0 }
+        $bar = if ($barLen -gt 0) { "#" * $barLen } else { "" }
+        $padded = $sev.PadRight(12)
+        W "$padded | $($c.ToString().PadLeft(3)) | $bar"
+    }
+    W '```'
+    W ""
+}
+
+# Diff with previous run
+if ($CompareWith -and (Test-Path $CompareWith)) {
+    W "### Diff vs previous run"
+    W ""
+    $prevPhases = @()
+    foreach ($f in (Get-ChildItem -Path $CompareWith -Filter "*.json" -File)) {
+        try { $prevPhases += (Get-Content $f.FullName -Raw | ConvertFrom-Json) } catch {}
+    }
+    $prevFindings = @()
+    foreach ($p in $prevPhases) { $prevFindings += $p.findings }
+    $prevIds = $prevFindings | ForEach-Object { $_.id }
+    $curIds  = $allFindings | ForEach-Object { $_.id }
+    $newIds = $curIds | Where-Object { $_ -notin $prevIds }
+    $resolvedIds = $prevIds | Where-Object { $_ -notin $curIds }
+    W "**New findings since previous run:** $($newIds.Count)"
+    foreach ($id in $newIds | Select-Object -First 10) {
+        $f = $allFindings | Where-Object { $_.id -eq $id } | Select-Object -First 1
+        if ($f) { W "- $id ($($f.severity)): $($f.title)" }
+    }
+    if ($newIds.Count -gt 10) { W "- ...and $($newIds.Count - 10) more." }
+    W ""
+    W "**Resolved findings since previous run:** $($resolvedIds.Count)"
+    foreach ($id in $resolvedIds | Select-Object -First 10) {
+        $f = $prevFindings | Where-Object { $_.id -eq $id } | Select-Object -First 1
+        if ($f) { W "- $id ($($f.severity)): $($f.title)" }
+    }
+    if ($resolvedIds.Count -gt 10) { W "- ...and $($resolvedIds.Count - 10) more." }
+    W ""
+}
+
+# MITRE ATT&CK tactic coverage
+$mitreControls = $allControls | Where-Object { $_ -like "MITRE.*" }
+if ($mitreControls.Count -gt 0) {
+    $tactics = $mitreControls | ForEach-Object { ($_ -split '\.')[1] } | Sort-Object -Unique
+    if ($tactics.Count -gt 0) {
+        W "### MITRE ATT&CK tactic coverage"
+        W ""
+        W "Tactics surfaced by analytics rules + detection content:"
+        W ""
+        foreach ($t in $tactics) {
+            $techs = $mitreControls | Where-Object { ($_ -split '\.')[1] -eq $t } | ForEach-Object { ($_ -split '\.')[2] } | Sort-Object -Unique
+            W "- **$t** ($($techs.Count) technique$(if ($techs.Count -ne 1) {'s'})): $($techs -join ', ')"
+        }
+        W ""
+    }
+}
 
 # Top 3 P1
 $p1 = $allFindings | Where-Object { $_.severity -eq "P1" } | Select-Object -First 3
