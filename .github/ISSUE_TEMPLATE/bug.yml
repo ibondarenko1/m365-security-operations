@@ -1,0 +1,90 @@
+name: Bug report
+description: Something works incorrectly or breaks
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. To help triage quickly, please include the requested details. Logs / screenshots are welcome but redact any tenant IDs, user UPNs, real domain names, or other sensitive identifiers before pasting.
+
+  - type: input
+    id: tool-version
+    attributes:
+      label: Toolkit version
+      description: Output of `git rev-parse --short HEAD` or release tag
+      placeholder: v1.0.0
+    validations:
+      required: true
+
+  - type: input
+    id: powershell-version
+    attributes:
+      label: PowerShell version
+      description: Output of `$PSVersionTable.PSVersion`
+      placeholder: "7.4.1"
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: "Windows 11 23H2 / Ubuntu 22.04 / macOS 14"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Which phase / script
+      options:
+        - run-audit.ps1 (orchestrator)
+        - Generate-Report.ps1
+        - audit-sentinel.ps1
+        - audit-defender-o365.ps1
+        - audit-dns-posture.ps1
+        - audit-identity-posture.ps1
+        - audit-defender-cloud.ps1
+        - lib/Finding.psm1
+        - lib/MockClient.psm1
+        - Mock mode (./examples/run-mock.ps1)
+        - Pester tests
+        - GitHub Actions CI
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: Describe the bug in 1-3 sentences.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+      description: What should have happened instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction steps
+      description: Exact commands or sequence of steps. Mock-mode reproduction (`./examples/run-mock.ps1`) is preferred — easier to debug.
+      placeholder: |
+        1. Run `./examples/run-mock.ps1`
+        2. Observe error in Phase X
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: error
+    attributes:
+      label: Error output (redacted)
+      description: Paste the full error message + stack trace. **Redact tenant IDs, user UPNs, real domain names, real GUIDs before pasting.**
+      render: shell

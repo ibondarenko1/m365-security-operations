@@ -1,0 +1,32 @@
+name: Close stale issues + PRs
+
+on:
+  schedule:
+    - cron: "0 12 * * 1"  # Monday noon UTC
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/stale@v9
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          days-before-issue-stale: 60
+          days-before-pr-stale: 30
+          days-before-issue-close: 14
+          days-before-pr-close: 14
+          stale-issue-message: |
+            This issue has had no activity for 60 days. It will close in 14 days unless commented or labeled `keep-open`. Reopen anytime if it remains relevant.
+          stale-pr-message: |
+            This PR has had no activity for 30 days. It will close in 14 days unless updated. Reopen anytime to continue.
+          close-issue-message: |
+            Closed due to inactivity. Reopen if the issue still applies.
+          close-pr-message: |
+            Closed due to inactivity. Reopen if you want to continue.
+          exempt-issue-labels: "keep-open,roadmap,security"
+          exempt-pr-labels: "keep-open,security"
+          stale-issue-label: "stale"
+          stale-pr-label: "stale"

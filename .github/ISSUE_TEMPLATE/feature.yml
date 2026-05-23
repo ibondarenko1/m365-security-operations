@@ -1,0 +1,39 @@
+name: Feature request
+description: Propose new functionality (orchestrator behavior, report format, infrastructure, etc.)
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for changes that aren't a new check (use "New check proposal" for that), aren't a bug (use "Bug report"), aren't an FP-pattern (use "False positive pattern report"). Example: "Add HTML report output format" or "Add Slack notification when run-audit completes".
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem this solves
+      description: What's the operator pain you've hit that this feature would relieve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What should the toolkit do differently?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Why this approach over others?
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      description: Confirm this fits the toolkit scope
+      options:
+        - label: Fits "small-org cloud-only M365 + Cloudflare" scope per ROADMAP.md
+        - label: Does NOT push into multi-tenant / federal / on-prem AD territory

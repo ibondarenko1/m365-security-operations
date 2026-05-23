@@ -1,0 +1,101 @@
+name: New check proposal
+description: Propose a new posture check for an existing or new domain
+labels: ["new-check", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for proposing a check. Per [`CONTRIBUTING.md`](../CONTRIBUTING.md), every check should have a clear posture gap it surfaces + framework controls it ties to + a remediation path. Use this template to lay out the proposal before opening a PR.
+
+  - type: dropdown
+    id: domain
+    attributes:
+      label: Which domain
+      options:
+        - 01 Sentinel detection engineering
+        - 02 Defender for Office 365
+        - 03 DNS + email authentication
+        - 04 Identity hardening
+        - 05 Governance (Defender for Cloud, NIST/ISO mapping)
+        - New domain (will require new top-level folder)
+    validations:
+      required: true
+
+  - type: input
+    id: check-title
+    attributes:
+      label: Check title (one sentence, the finding title)
+      placeholder: "Cross-tenant inbound B2B unrestricted"
+    validations:
+      required: true
+
+  - type: textarea
+    id: posture-gap
+    attributes:
+      label: What posture gap does this surface
+      description: Plain English. Why should an operator care?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Proposed severity
+      description: P1 = within 1 week; P2 = within 30 days; P3 = within 90 days; INFO = posture context; OUT_OF_SCOPE = not applicable
+      options:
+        - P1
+        - P2
+        - P3
+        - INFO
+        - OUT_OF_SCOPE
+    validations:
+      required: true
+
+  - type: textarea
+    id: detection-mechanism
+    attributes:
+      label: Detection mechanism
+      description: Which Graph endpoint / ARM resource / DNS lookup / EXO cmdlet surfaces this state? What value indicates a gap vs configured state?
+      placeholder: |
+        Endpoint: /policies/crossTenantAccessPolicy/default
+        Field: b2bCollaborationInbound.usersAndGroups.accessType
+        Gap when: accessType == "allowed" AND targets array is empty (no allowlist)
+    validations:
+      required: true
+
+  - type: textarea
+    id: framework-controls
+    attributes:
+      label: Framework controls
+      description: Use SCHEMA.md dot-notation. Multiple allowed.
+      placeholder: |
+        - NIST.CSF.PR.AC-04
+        - ISO27001.A.5.15
+    validations:
+      required: true
+
+  - type: textarea
+    id: remediation-steps
+    attributes:
+      label: Remediation steps
+      description: Concrete actionable steps. Reference an existing remediation artifact path if one applies, or describe what new artifact would be needed.
+    validations:
+      required: true
+
+  - type: input
+    id: documentation-url
+    attributes:
+      label: Authoritative documentation URL
+      description: Microsoft Learn / NIST / RFC / vendor doc that explains the underlying control.
+      placeholder: "https://learn.microsoft.com/en-us/..."
+
+  - type: checkboxes
+    id: scope-check
+    attributes:
+      label: Scope check
+      description: Per ROADMAP.md, certain domains are explicitly out of scope. Confirm this proposal fits:
+      options:
+        - label: This check is NOT about multi-tenant management (CIPP territory)
+        - label: This check is NOT about federal compliance overlays (ScubaGear territory)
+        - label: This check is NOT about on-premises Active Directory
+        - label: This check is NOT about endpoint-device-level audit (Defender for Endpoint native)

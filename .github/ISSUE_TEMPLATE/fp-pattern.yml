@@ -1,0 +1,51 @@
+name: False positive pattern report
+description: A check fired on legitimate activity; document the FP pattern + propose tuning
+labels: ["false-positive", "tuning", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        FP recognition is the toolkit's most-valuable contribution category. Use this template to capture the pattern so the audit script can learn to suppress it.
+
+  - type: input
+    id: finding-id
+    attributes:
+      label: Which finding (ID from your report)
+      placeholder: "IDENT-007, MAIL-005, etc."
+    validations:
+      required: true
+
+  - type: textarea
+    id: pattern-description
+    attributes:
+      label: What was the legitimate activity
+      description: Brief — what was actually going on that the check mis-flagged.
+    validations:
+      required: true
+
+  - type: textarea
+    id: signal
+    attributes:
+      label: Detection signal
+      description: What in the data triggered the check? Include the relevant fields (redact PII).
+      placeholder: |
+        SenderFromAddress matched pattern *@webcontact.*
+        AuthenticationDetails showed all fail
+        EmailDirection = Outbound
+        ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: tuning-proposal
+    attributes:
+      label: Proposed tuning logic
+      description: How can the audit script distinguish this FP from real attacks? Pseudocode or KQL acceptable.
+    validations:
+      required: true
+
+  - type: input
+    id: business-impact
+    attributes:
+      label: Business impact if unsuppressed
+      placeholder: "Analyst spends 10 min/week on this false alert, masking real findings."
