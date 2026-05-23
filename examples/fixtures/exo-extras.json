@@ -1,0 +1,9 @@
+{
+  "comment": "Mock fixture for extended Defender O365 checks - represents typical small-org state with several common gaps.",
+  "zapForPhish": false,
+  "zapForSpam": false,
+  "outboundSpamRecipientLimitPerHour": 10000,
+  "outboundSpamAdminNotifyEnabled": false,
+  "transportRulesCount": 12,
+  "attackSimulationCampaigns": 0
+}

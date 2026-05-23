@@ -1,0 +1,7 @@
+{
+  "value": [
+    { "name": "a1", "properties": { "displayName": "Example MFA recommendation", "status": { "code": "Unhealthy" }, "metadata": { "severity": "High" } } },
+    { "name": "a2", "properties": { "displayName": "Example storage encryption", "status": { "code": "Unhealthy" }, "metadata": { "severity": "Medium" } } },
+    { "name": "a3", "properties": { "displayName": "Example logging", "status": { "code": "Unhealthy" }, "metadata": { "severity": "Low" } } }
+  ]
+}

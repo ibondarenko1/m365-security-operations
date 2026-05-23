@@ -79,10 +79,86 @@ if ($MockMode) {
         -Description "No Strict Preset assigned to any user group. For high-risk users (executives, finance, IT), Strict Preset adds aggressive Safe Links rewrites and Safe Attachments dynamic detonation." `
         -FrameworkControls @("NIST.CSF.PR.AC-04","MCSB.IM-6") `
         -RemediationArtifact "02-defender-o365-policy/templates/apply-strict-preset-to-group.ps1" `
+        -DocumentationUrl "https://learn.microsoft.com/en-us/defender-office-365/preset-security-policies" `
         -RemediationSteps @(
             "Create a security group named 'sg-high-risk-users' containing executives + finance + IT.",
             "Run: 02-defender-o365-policy/templates/apply-strict-preset-to-group.ps1 -GroupName 'sg-high-risk-users'"
         )))
+
+    # Mock additional checks via fixture data
+    $extraData = Get-MockFixture -Name "exo-extras"
+
+    if ($extraData.zapForPhish -ne $true) {
+        [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "P2" `
+            -Title "Zero-hour Auto Purge for phish disabled" `
+            -Description "ZAP retroactively removes phishing emails already delivered to inboxes when Defender's threat intelligence later classifies them as phish. Disabling ZAP defeats one of Defender's most-valuable post-delivery controls." `
+            -FrameworkControls @("NIST.CSF.RS.MI-02","ISO27001.A.8.7") `
+            -DocumentationUrl "https://learn.microsoft.com/en-us/defender-office-365/zero-hour-auto-purge" `
+            -RemediationSteps @(
+                "Defender > Email & Collaboration > Policies > Anti-spam > <policy> > Edit > Zero-hour auto purge.",
+                "Toggle: Enable zero-hour auto purge (ZAP) for phishing messages."
+            )))
+    }
+
+    if ($extraData.zapForSpam -ne $true) {
+        [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "P3" `
+            -Title "Zero-hour Auto Purge for spam disabled" `
+            -Description "ZAP for spam similarly removes spam messages post-delivery when threat intel updates. Less critical than phish-ZAP but still recommended." `
+            -FrameworkControls @("NIST.CSF.RS.MI-02") `
+            -RemediationSteps @("Defender > Anti-spam policies > Edit > enable ZAP for spam.")))
+    }
+
+    if ($extraData.outboundSpamRecipientLimitPerHour -ge 1000) {
+        [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "P2" `
+            -Title "Outbound spam recipient limit too permissive" `
+            -Description "Outbound spam policy permits $($extraData.outboundSpamRecipientLimitPerHour) external recipients per hour. Compromised accounts are weaponized for outbound phishing within hours; lower thresholds + admin alerting on threshold breach are early-warning signals." `
+            -FrameworkControls @("NIST.CSF.DE.AE-03","NIST.800-53.SI-8") `
+            -DocumentationUrl "https://learn.microsoft.com/en-us/defender-office-365/outbound-spam-policies-configure" `
+            -RemediationSteps @(
+                "Defender > Anti-spam policies > Outbound policy > Edit.",
+                "Set: 'External message limit per hour' to a value appropriate for your normal outbound volume (e.g. 100 for small org).",
+                "Enable admin notification when threshold breached."
+            )))
+    }
+
+    if (-not $extraData.outboundSpamAdminNotifyEnabled) {
+        [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "P2" `
+            -Title "No admin notification on outbound spam threshold" `
+            -Description "Outbound spam policy has no admin email recipient configured. Threshold breaches (likely account compromise indicator) go unnoticed until end-user reports." `
+            -FrameworkControls @("NIST.CSF.DE.AE-03") `
+            -RemediationSteps @(
+                "Defender > Anti-spam policies > Outbound policy > Notifications.",
+                "Add admin email under 'Send a copy of suspicious outbound that exceeds these limits to'."
+            )))
+    }
+
+    if ($extraData.transportRulesCount -ge 50) {
+        [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "P3" `
+            -Title "High transport rules count - review for drift" `
+            -Description "$($extraData.transportRulesCount) Exchange transport rules deployed. Rules accumulate over time; periodic review catches stale or conflicting rules that complicate troubleshooting." `
+            -FrameworkControls @("ISO27001.A.5.30") `
+            -RemediationSteps @(
+                "EAC > Mail flow > Rules. Review each rule for purpose + last-fired date.",
+                "Disable + monitor for 30 days before deletion. Document rationale in description field."
+            )))
+    } else {
+        [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "INFO" `
+            -Title "Transport rules inventory" `
+            -Description "$($extraData.transportRulesCount) Exchange transport rules deployed."))
+    }
+
+    if ($extraData.attackSimulationCampaigns -eq 0) {
+        [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "P3" `
+            -Title "No Attack Simulation Training campaigns" `
+            -Description "Defender for O365 includes free attack simulation training (phishing simulations, credential harvest, malware). Zero campaigns means user-awareness baseline is unmeasured." `
+            -FrameworkControls @("NIST.CSF.PR.AT-01","ISO27001.A.6.3") `
+            -DocumentationUrl "https://learn.microsoft.com/en-us/defender-office-365/attack-simulation-training-get-started" `
+            -RemediationSteps @(
+                "Defender > Email & Collaboration > Attack simulation training > Simulations > Launch a simulation.",
+                "Start with phishing technique; target IT + executives + finance first.",
+                "Review results after 14 days; assign training to clickers."
+            )))
+    }
 
     $severityCounts = Get-FindingSeverityCount -Findings $findings
     Write-Host ""

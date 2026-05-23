@@ -102,6 +102,8 @@ function Invoke-ArmMock {
     $map = [ordered]@{
         "*/Microsoft.Security/pricings*"                                              = "arm-pricings"
         "*/Microsoft.Security/secureScores*"                                          = "arm-secure-score"
+        "*/Microsoft.Security/assessments*"                                           = "arm-mdc-assessments"
+        "*/Microsoft.Security/automations*"                                           = "arm-mdc-automations"
         "*/Microsoft.SecurityInsights/onboardingStates*"                              = "arm-sentinel-onboarding"
         "*/Microsoft.SecurityInsights/alertRules*"                                    = "arm-analytics-rules"
         "*/Microsoft.SecurityInsights/dataConnectors*"                                = "arm-sentinel-data-connectors"

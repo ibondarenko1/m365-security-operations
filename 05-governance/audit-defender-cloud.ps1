@@ -104,6 +104,62 @@ try {
     [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "P3" -Title "Secure Score read failed" -Description "Error: $($_.Exception.Message)"))
 }
 
+# === Recommendation assessments by severity ===
+try {
+    $assUri = "https://management.azure.com/subscriptions/$SubscriptionId/providers/Microsoft.Security/assessments`?api-version=2020-01-01"
+    $ass = Invoke-ArmGet -Uri $assUri | ConvertFrom-Json -ErrorAction SilentlyContinue
+    if ($ass.value -and $ass.value.Count -gt 0) {
+        $unhealthy = $ass.value | Where-Object { $_.properties.status.code -eq "Unhealthy" }
+        $high   = ($unhealthy | Where-Object { $_.properties.metadata.severity -eq "High" }).Count
+        $medium = ($unhealthy | Where-Object { $_.properties.metadata.severity -eq "Medium" }).Count
+        $low    = ($unhealthy | Where-Object { $_.properties.metadata.severity -eq "Low" }).Count
+
+        if ($high -gt 0) {
+            [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "P2" `
+                -Title "Defender for Cloud high-severity recommendations open" `
+                -Description "$high High-severity unhealthy assessments. These are the recommendations Microsoft considers most-critical for the tenant's current resource posture." `
+                -FrameworkControls @("MCSB.PV-1","NIST.CSF.ID.RA-01") `
+                -DocumentationUrl "https://learn.microsoft.com/en-us/azure/defender-for-cloud/review-security-recommendations" `
+                -RemediationSteps @(
+                    "Defender for Cloud > Recommendations > filter Severity = High + Status = Unhealthy.",
+                    "Address top items via 'Fix' button (one-click remediations) or follow per-recommendation guidance."
+                ) `
+                -Evidence @{ high = $high; medium = $medium; low = $low }))
+        }
+        [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "INFO" `
+            -Title "Defender for Cloud recommendations summary" `
+            -Description "Open: $high High, $medium Medium, $low Low severity recommendations."))
+    }
+} catch { }
+
+# === Defender for AI plane status ===
+$aiPlan = $pricings.value | Where-Object { $_.name -eq "AI" }
+if ($aiPlan -and $aiPlan.properties.pricingTier -eq "Free") {
+    [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "INFO" `
+        -Title "Defender for AI plane on Free tier" `
+        -Description "Microsoft Defender for AI (formerly Defender for Cloud AI plane) is on Free tier. Tracks model deployments, prompt-injection threats, and AI workload posture. Standard tier is recommended once tenant has production AI workloads." `
+        -FrameworkControls @("MCSB.LT-1") `
+        -DocumentationUrl "https://learn.microsoft.com/en-us/azure/defender-for-cloud/ai-threat-protection"))
+}
+
+# === Continuous export to Sentinel ===
+try {
+    $exportUri = "https://management.azure.com/subscriptions/$SubscriptionId/providers/Microsoft.Security/automations`?api-version=2023-12-01-preview"
+    $automations = Invoke-ArmGet -Uri $exportUri | ConvertFrom-Json -ErrorAction SilentlyContinue
+    if (-not $automations.value -or $automations.value.Count -eq 0) {
+        [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "P3" `
+            -Title "Defender for Cloud continuous export not configured" `
+            -Description "Without continuous export, Defender for Cloud alerts and recommendations stay in MDC and don't flow to Sentinel for unified incident correlation." `
+            -FrameworkControls @("NIST.CSF.DE.AE-03") `
+            -DocumentationUrl "https://learn.microsoft.com/en-us/azure/defender-for-cloud/continuous-export" `
+            -RemediationSteps @(
+                "Defender for Cloud > Environment settings > <subscription> > Continuous export.",
+                "Add export target: Event Hub OR Log Analytics workspace (the Sentinel workspace).",
+                "Select: Security alerts, Recommendations, Regulatory compliance assessments."
+            )))
+    }
+} catch { }
+
 # === Final write ===
 $severityCounts = Get-FindingSeverityCount -Findings $findings
 Write-Host ""
