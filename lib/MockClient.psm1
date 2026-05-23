@@ -71,10 +71,15 @@ function Invoke-GraphMock {
     }
 
     $map = @{
-        "*/identity/conditionalAccess/policies*" = "graph-conditional-access-policies"
-        "*/policies/authorizationPolicy*"         = "graph-authorization-policy"
-        "*/directoryRoles*"                       = "graph-directory-roles-with-members"
-        "*/users*"                                = "graph-users"
+        "*/identity/conditionalAccess/policies*"        = "graph-conditional-access-policies"
+        "*/identity/conditionalAccess/namedLocations*"  = "graph-named-locations"
+        "*/policies/authorizationPolicy*"                = "graph-authorization-policy"
+        "*/policies/authenticationMethodsPolicy*"        = "graph-authentication-methods-policy"
+        "*/policies/crossTenantAccessPolicy/default*"    = "graph-cross-tenant-access-policy"
+        "*/directoryRoles*"                              = "graph-directory-roles-with-members"
+        "*/users*"                                       = "graph-users"
+        "*/servicePrincipals*"                           = "graph-service-principals"
+        "*/identityProtection/policies/signInRisk*"      = "graph-signin-risk-policy"
     }
     foreach ($pattern in $map.Keys) {
         if ($Uri -like $pattern) {
@@ -133,6 +138,8 @@ function Resolve-DnsMock {
     elseif ($Type -eq "MX")                                            { $key = "mx" }
     elseif ($Type -eq "TXT")                                           { $key = "spf" }
     elseif ($Type -eq "NS")                                            { $key = "ns" }
+    elseif ($Type -eq "DS")                                            { $key = "ds" }
+    elseif ($Type -eq "CAA")                                           { $key = "caa" }
 
     if (-not $key) { throw "MockClient: unmapped DNS query ($Name $Type)" }
     $entry = $dns.$key

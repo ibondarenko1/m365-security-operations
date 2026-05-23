@@ -129,6 +129,10 @@ foreach ($p in $phases) {
             W ""
             W "$($f.description)"
             W ""
+            if ($f.documentation_url) {
+                W "_Reference: [$($f.documentation_url)]($($f.documentation_url))_"
+                W ""
+            }
             if ($f.remediation_steps -and $f.remediation_steps.Count -gt 0) {
                 W "**Remediation steps:**"
                 W ""

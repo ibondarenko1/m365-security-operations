@@ -40,5 +40,7 @@
     "name": "example.com",
     "type": "NS",
     "records": ["ns1.example-dns-provider.com", "ns2.example-dns-provider.com"]
-  }
+  },
+  "ds": { "name": "example.com", "type": "DS", "nxdomain": true },
+  "caa": { "name": "example.com", "type": "CAA", "nxdomain": true }
 }

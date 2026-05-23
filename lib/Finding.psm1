@@ -18,6 +18,7 @@ function New-Finding {
         [string[]] $FrameworkControls = @(),
         $RemediationArtifact = $null,
         [string[]] $RemediationSteps = @(),
+        $DocumentationUrl = $null,
         [hashtable] $Evidence = $null
     )
     $obj = [ordered]@{
@@ -28,6 +29,7 @@ function New-Finding {
         framework_controls   = $FrameworkControls
         remediation_artifact = $RemediationArtifact
         remediation_steps    = $RemediationSteps
+        documentation_url    = $DocumentationUrl
     }
     if ($Evidence) { $obj.evidence = $Evidence }
     return [pscustomobject]$obj

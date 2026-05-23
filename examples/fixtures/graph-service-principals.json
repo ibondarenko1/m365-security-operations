@@ -1,0 +1,32 @@
+{
+  "value": [
+    {
+      "id": "66666666-6666-6666-6666-660000000001",
+      "displayName": "Custom Webhook Receiver",
+      "appId": "77777777-7777-7777-7777-770000000001",
+      "servicePrincipalType": "Application",
+      "passwordCredentials": [
+        { "keyId": "k1", "displayName": "default", "startDateTime": "2026-01-01T00:00:00Z", "endDateTime": "2026-06-15T00:00:00Z" }
+      ],
+      "keyCredentials": []
+    },
+    {
+      "id": "66666666-6666-6666-6666-660000000002",
+      "displayName": "M365 Backup Tool",
+      "appId": "77777777-7777-7777-7777-770000000002",
+      "servicePrincipalType": "Application",
+      "passwordCredentials": [
+        { "keyId": "k1", "displayName": "primary", "startDateTime": "2025-11-01T00:00:00Z", "endDateTime": "2027-11-01T00:00:00Z" }
+      ],
+      "keyCredentials": []
+    },
+    {
+      "id": "66666666-6666-6666-6666-660000000003",
+      "displayName": "Microsoft Graph",
+      "appId": "00000003-0000-0000-c000-000000000000",
+      "servicePrincipalType": "Application",
+      "passwordCredentials": [],
+      "keyCredentials": []
+    }
+  ]
+}

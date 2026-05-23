@@ -13,5 +13,8 @@
     "allowedToCreateSecurityGroups": true,
     "allowedToReadOtherUsers": true,
     "allowedToReadBitlockerKeysForOwnedDevice": true
-  }
+  },
+  "permissionGrantPolicyIdsAssignedToDefaultUserRole": [
+    "ManagePermissionGrantsForSelf.microsoft-user-default-legacy"
+  ]
 }

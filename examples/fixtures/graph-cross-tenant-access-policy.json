@@ -1,0 +1,12 @@
+{
+  "id": "default",
+  "displayName": "Default cross-tenant access policy",
+  "b2bCollaborationInbound": {
+    "usersAndGroups": { "accessType": "allowed", "targets": [] },
+    "applications": { "accessType": "allowed", "targets": [] }
+  },
+  "b2bCollaborationOutbound": {
+    "usersAndGroups": { "accessType": "allowed", "targets": [] },
+    "applications": { "accessType": "allowed", "targets": [] }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "id": "authenticationMethodsPolicy",
+  "displayName": "Authentication methods policy",
+  "authenticationMethodConfigurations": [
+    { "id": "Sms",                    "state": "enabled" },
+    { "id": "MicrosoftAuthenticator", "state": "enabled" },
+    { "id": "Email",                  "state": "enabled" },
+    { "id": "Fido2",                  "state": "disabled" },
+    { "id": "TemporaryAccessPass",    "state": "disabled" },
+    { "id": "HardwareOath",           "state": "disabled" },
+    { "id": "X509Certificate",        "state": "disabled" }
+  ]
+}

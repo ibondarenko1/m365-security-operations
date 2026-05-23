@@ -212,6 +212,95 @@ if (-not $tlsRpt) {
         )))
 }
 
+# === CAA records ===
+$caa = Resolve-OrNull -Name $Domain -Type "CAA" -Server $Resolver
+if (-not $caa) {
+    [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "P3" `
+        -Title "CAA records not configured" `
+        -Description "Certification Authority Authorization (CAA) records restrict which CAs can issue certificates for the domain. Without CAA, any public CA can issue. Mis-issuance via compromised CA / domain-validation flaw becomes harder to detect or prevent." `
+        -FrameworkControls @("NIST.CSF.PR.DS-02","ISO27001.A.8.24") `
+        -RemediationArtifact "03-dns-email-auth/templates/" `
+        -RemediationSteps @(
+            "Add CAA record at ${Domain}: 0 issue `"letsencrypt.org`" (or whichever CA you use).",
+            "For additional protection: 0 iodef `"mailto:security@${Domain}`" to receive notification of unauthorized issuance attempts.",
+            "Test with https://caatest.co.uk or `dig +short CAA ${Domain}`."
+        )))
+}
+
+# === DNSSEC ===
+# DNSSEC presence is hard to confirm from a simple resolver query without explicit DNSSEC validation.
+# Check via DS record at parent — if it exists, the zone is DNSSEC-signed.
+$ds = Resolve-OrNull -Name $Domain -Type "DS" -Server $Resolver
+if (-not $ds) {
+    [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "P3" `
+        -Title "DNSSEC not enabled" `
+        -Description "No DS record at the parent zone. DNSSEC signing not deployed. Without DNSSEC, DNS responses can be spoofed via cache-poisoning attacks." `
+        -FrameworkControls @("NIST.CSF.PR.DS-02","NIST.800-53.SC-20","ISO27001.A.8.20") `
+        -RemediationSteps @(
+            "Enable DNSSEC signing in your DNS provider's zone management.",
+            "Cloudflare: DNS > Settings > DNSSEC > Enable. Cloudflare returns DS record to publish at registrar.",
+            "Verify with https://dnssec-analyzer.verisignlabs.com or `dig +dnssec ${Domain}`."
+        )))
+}
+
+# === SPF lookup count (RFC 7208 max 10) ===
+if ($spfText) {
+    $includeCount = ([regex]::Matches($spfText, '\binclude:|\bredirect=')).Count
+    $aRecordRefs   = ([regex]::Matches($spfText, '\ba:|\bmx\b')).Count
+    $approxLookups = $includeCount + $aRecordRefs
+    if ($approxLookups -ge 8) {
+        [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "P2" `
+            -Title "SPF approaches RFC 7208 lookup limit" `
+            -Description "SPF record contains $approxLookups direct DNS lookups (include + a + mx + redirect). RFC 7208 caps at 10 — if exceeded, receivers return PermError and authentication fails. Each `include:` mechanism additionally counts its own lookups recursively." `
+            -FrameworkControls @("NIST.CSF.PR.DS-02","NIST.800-177.Section-4.4","RFC.7208") `
+            -RemediationSteps @(
+                "Reduce SPF includes by consolidating mail-sender services or using SPF flattening (resolved at zone-publish time, not runtime).",
+                "Tool: https://www.kitterman.com/spf/validate.html to count actual recursive lookups.",
+                "Current SPF: $spfText"
+            ) `
+            -Evidence @{ approx_lookups = $approxLookups; spf_text = $spfText }))
+    }
+}
+
+# === DMARC sub-policy (sp=) ===
+if ($dmarcText) {
+    $hasSp = $dmarcText -match '\bsp=(\w+)'
+    if (-not $hasSp) {
+        [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "P3" `
+            -Title "DMARC sub-policy (sp=) not explicitly defined" `
+            -Description "DMARC record lacks `sp=` tag for subdomains. Without sp, subdomains inherit the main policy — usually fine, but explicit sp=reject is recommended to make subdomain enforcement intentional." `
+            -FrameworkControls @("NIST.800-177.Section-4.6","RFC.7489") `
+            -RemediationSteps @(
+                "Update DMARC TXT at _dmarc.${Domain} to append `sp=reject;`.",
+                "Current value: $dmarcText"
+            )))
+    }
+}
+
+# === DKIM key strength (selector1) ===
+# DKIM keys via CNAME chain — fetching the actual TXT key for length check is impractical here.
+# Instead emit informational finding documenting how to check.
+if ($dkimTarget) {
+    [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "INFO" `
+        -Title "DKIM key strength verification — manual" `
+        -Description "DKIM key strength (1024 vs 2048 bit) cannot be inferred from CNAME — requires fetching the underlying TXT record at the target. RSA-2048 is the modern recommendation per RFC 8301." `
+        -RemediationSteps @(
+            "Resolve the CNAME target to its TXT record: `dig TXT <cname-target>`.",
+            "Inspect the p= parameter — base64-decoded, RSA modulus should be 256 bytes for 2048-bit.",
+            "If 1024-bit found and provider permits rotation: regenerate with 2048-bit key length."
+        )))
+}
+
+# === MX backup ===
+$mxAll = Resolve-OrNull -Name $Domain -Type "MX" -Server $Resolver
+$mxCount = if ($mxAll) { ($mxAll | Where-Object { $_.NameExchange }).Count } else { 0 }
+if ($mxCount -eq 1) {
+    [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "INFO" `
+        -Title "Single MX record (no backup)" `
+        -Description "Only one MX target. For M365-managed domains this is the recommended pattern — Microsoft handles redundancy server-side. Backup MX is unnecessary unless using a third-party mail-archive gateway." `
+        -Evidence @{ mx_count = $mxCount }))
+}
+
 # === BIMI ===
 $bimi = Get-TxtValue (Resolve-OrNull -Name "default._bimi.$Domain" -Type "TXT" -Server $Resolver)
 if (-not $bimi) {

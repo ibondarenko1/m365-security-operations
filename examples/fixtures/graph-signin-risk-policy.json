@@ -1,0 +1,6 @@
+{
+  "id": "signInRiskPolicy",
+  "displayName": "Sign-in risk policy",
+  "isEnabled": false,
+  "comment": "Disabled in mock to surface the P3 finding. In a tenant with Entra ID P2 + active policy this would have isEnabled=true."
+}

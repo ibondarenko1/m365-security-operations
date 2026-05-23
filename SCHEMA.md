@@ -60,6 +60,7 @@ Each gap or noteworthy observation is a Finding:
 | `framework_controls` | array of strings | yes | Framework control identifiers using dot-notation: `<FRAMEWORK>.<CATEGORY>.<CONTROL>`. See framework control naming below. Empty array allowed for INFO findings. |
 | `remediation_artifact` | string or null | yes | Path relative to repo root pointing to a deployable artifact (e.g. `04-identity-hardening/policies/require-mfa-all-admins.json`). `null` when remediation is manual or out of scope. |
 | `remediation_steps` | array of strings | yes | Ordered actionable steps for remediation. Each step is one sentence; full step-by-step procedure. May be empty for INFO findings. |
+| `documentation_url` | string or null | yes (since v0.3) | Authoritative external link explaining the underlying control or vulnerability (Microsoft Learn, NIST publication, RFC, vendor docs). `null` when no canonical reference applies. |
 | `evidence` | object | no | Optional phase-specific data dump for debugging or for the report aggregator to reference. Schema is phase-defined. |
 
 ---
