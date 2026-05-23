@@ -1,0 +1,37 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "Sentinel Scheduled Analytics Rule — Failed Azure Resource Manager operations spike. MITRE Discovery (T1087). 10+ failed operations from a single caller within 5 minutes suggests permission probing or misconfigured automation worth investigating.",
+    "mitreTactic": "Discovery",
+    "mitreTechnique": "T1087"
+  },
+  "parameters": {
+    "workspaceName": { "type": "string" },
+    "ruleId": { "type": "string", "defaultValue": "[newGuid()]" }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.OperationalInsights/workspaces/providers/alertRules",
+      "apiVersion": "2024-09-01",
+      "name": "[concat(parameters('workspaceName'), '/Microsoft.SecurityInsights/', parameters('ruleId'))]",
+      "kind": "Scheduled",
+      "properties": {
+        "displayName": "Failed Activity Log operations spike",
+        "description": "Detects 10+ failed Azure Resource Manager operations from a single caller within 5 minutes.",
+        "severity": "Medium",
+        "enabled": true,
+        "query": "AzureActivity\n| where TimeGenerated > ago(1h)\n| where ActivityStatusValue == \"Failure\"\n| summarize FailureCount = count() by Caller, bin(TimeGenerated, 5m)\n| where FailureCount >= 10",
+        "queryFrequency": "PT15M",
+        "queryPeriod": "PT1H",
+        "triggerOperator": "GreaterThan",
+        "triggerThreshold": 0,
+        "tactics": ["Discovery"],
+        "techniques": ["T1087"],
+        "suppressionDuration": "PT1H",
+        "suppressionEnabled": false,
+        "eventGroupingSettings": { "aggregationKind": "SingleAlert" }
+      }
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+// Drill 05 — URL TLD distribution
+// Purpose: spot anomalous TLDs in email body URLs. Clean tenants are dominated by .com / .net / known SaaS TLDs.
+// Phishing-favored TLDs: .zip, .click, .top, .xyz, .tk, .ml, .ga, .gq, .cf
+// SC-200 pattern: split(), tostring() casting, dcount() for distinct counts.
+
+EmailUrlInfo
+| where Timestamp > ago(30d)
+| extend Tld = tolower(tostring(split(UrlDomain, '.')[-1]))
+| summarize Count = count(), DistinctDomains = dcount(UrlDomain)
+    by Tld
+| order by Count desc
+| take 30
+
+// Hunt for known-phish TLDs:
+// EmailUrlInfo
+// | where Timestamp > ago(30d)
+// | extend Tld = tolower(tostring(split(UrlDomain, '.')[-1]))
+// | where Tld in ("zip","click","top","xyz","tk","ml","ga","gq","cf")
+// | summarize Count = count() by UrlDomain, Tld
+// | order by Count desc

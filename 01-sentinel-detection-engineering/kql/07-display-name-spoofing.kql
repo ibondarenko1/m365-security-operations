@@ -1,0 +1,33 @@
+// Drill 07 — Brand impersonation in sender display name
+// Purpose: detect emails where the display name claims a major brand
+// (Microsoft, Amazon, Apple, PayPal, etc.) but the sender domain does not match.
+// SC-200 pattern: case() expression, multi-condition filtering, brand-to-domain mapping.
+
+EmailEvents
+| where Timestamp > ago(30d)
+| where EmailDirection == "Inbound"
+| where SenderDisplayName has_any (
+    "microsoft", "amazon", "apple", "paypal", "netflix", "google",
+    "linkedin", "facebook", "instagram", "twitter", "bank", "irs",
+    "fedex", "ups", "docusign", "dropbox", "adobe"
+  )
+| extend BrandClaimed = case(
+    SenderDisplayName has "microsoft" and SenderFromDomain !endswith "microsoft.com"
+        and SenderFromDomain !endswith "live.com" and SenderFromDomain !endswith "outlook.com"
+        and SenderFromDomain !endswith "office.com", "Microsoft",
+    SenderDisplayName has "amazon" and SenderFromDomain !endswith "amazon.com"
+        and SenderFromDomain !endswith "amazonaws.com", "Amazon",
+    SenderDisplayName has "apple" and SenderFromDomain !endswith "apple.com"
+        and SenderFromDomain !endswith "icloud.com", "Apple",
+    SenderDisplayName has "paypal" and SenderFromDomain !endswith "paypal.com", "PayPal",
+    SenderDisplayName has "google" and SenderFromDomain !endswith "google.com"
+        and SenderFromDomain !endswith "googlemail.com", "Google",
+    SenderDisplayName has "docusign" and SenderFromDomain !endswith "docusign.net"
+        and SenderFromDomain !endswith "docusign.com", "DocuSign",
+    "")
+| where BrandClaimed != ""
+// FP tuning — exclude LinkedIn-relayed branded newsletters
+| where not(SenderDisplayName has " via " and SenderFromDomain endswith "linkedin.com")
+| project Timestamp, SenderDisplayName, SenderFromDomain, BrandClaimed,
+          Subject, DeliveryAction, ThreatTypes
+| order by Timestamp desc

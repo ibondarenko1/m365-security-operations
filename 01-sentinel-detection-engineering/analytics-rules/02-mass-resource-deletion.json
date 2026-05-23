@@ -1,0 +1,37 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "Sentinel Scheduled Analytics Rule — Mass resource deletion in Azure subscription. MITRE Impact (T1485). Fires when a single caller deletes 5+ resources within 5 minutes — common ransomware / destructive-attack pattern post-credential-compromise.",
+    "mitreTactic": "Impact",
+    "mitreTechnique": "T1485"
+  },
+  "parameters": {
+    "workspaceName": { "type": "string" },
+    "ruleId": { "type": "string", "defaultValue": "[newGuid()]" }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.OperationalInsights/workspaces/providers/alertRules",
+      "apiVersion": "2024-09-01",
+      "name": "[concat(parameters('workspaceName'), '/Microsoft.SecurityInsights/', parameters('ruleId'))]",
+      "kind": "Scheduled",
+      "properties": {
+        "displayName": "Mass resource deletion",
+        "description": "Detects 5+ successful delete operations from a single caller within a 5-minute window.",
+        "severity": "High",
+        "enabled": true,
+        "query": "AzureActivity\n| where TimeGenerated > ago(1h)\n| where OperationNameValue endswith \"/delete\"\n| where ActivityStatusValue == \"Success\"\n| summarize DeleteCount = count(), DeletedResources = make_set(ResourceId, 10) by Caller, bin(TimeGenerated, 5m)\n| where DeleteCount >= 5",
+        "queryFrequency": "PT15M",
+        "queryPeriod": "PT1H",
+        "triggerOperator": "GreaterThan",
+        "triggerThreshold": 0,
+        "tactics": ["Impact"],
+        "techniques": ["T1485"],
+        "suppressionDuration": "PT1H",
+        "suppressionEnabled": false,
+        "eventGroupingSettings": { "aggregationKind": "SingleAlert" }
+      }
+    }
+  ]
+}

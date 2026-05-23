@@ -1,0 +1,19 @@
+// Drill 06 — IP-as-URL detection
+// Purpose: URLs where the domain is a raw IPv4 address. Classic phishing indicator —
+// real services use domain names, while attackers occasionally use raw IPs to bypass takedown.
+// SC-200 pattern: regex matching, join to enrich with email context.
+
+EmailUrlInfo
+| where Timestamp > ago(30d)
+| where UrlDomain matches regex @"^\d+\.\d+\.\d+\.\d+$"
+| join kind=inner (
+    EmailEvents
+    | project NetworkMessageId, SenderFromDomain, Subject, DeliveryAction,
+              RecipientEmailAddress, EmailDirection, ThreatTypes
+  ) on NetworkMessageId
+| project Timestamp, SenderFromDomain, UrlDomain, Url, DeliveryAction,
+          EmailDirection, ThreatTypes, Subject
+| order by Timestamp desc
+
+// Tuning note: filter EmailDirection == "Inbound" if outbound security correspondence
+// (vulnerability disclosures with payload URLs) is a known noise source for the org.

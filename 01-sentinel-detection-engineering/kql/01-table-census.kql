@@ -1,0 +1,29 @@
+// Drill 01 — Table census
+// Purpose: establish which Defender XDR tables actually have data over a time window.
+// Empty tables silently produce zero results that look like clean detections — run this first.
+// SC-200 pattern: union withsource, count() aggregation.
+
+union withsource=SourceTable
+    EmailEvents,
+    EmailUrlInfo,
+    EmailAttachmentInfo,
+    EmailPostDeliveryEvents,
+    AlertInfo,
+    AlertEvidence,
+    BehaviorEntities,
+    BehaviorInfo,
+    UrlClickEvents,
+    MessageEvents,
+    MessageUrlInfo,
+    DeviceEvents,
+    DeviceLogonEvents,
+    DeviceProcessEvents,
+    DeviceNetworkEvents,
+    DeviceFileEvents,
+    DeviceRegistryEvents,
+    IdentityLogonEvents,
+    IdentityQueryEvents,
+    CloudAppEvents
+| where Timestamp > ago(30d)
+| summarize Count = count() by SourceTable
+| order by Count desc

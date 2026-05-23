@@ -1,0 +1,37 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "Sentinel Scheduled Analytics Rule — Network Security Group rule modifications. MITRE Defense Evasion (T1562). Attackers commonly weaken NSG rules to allow lateral movement or exfiltration paths; legitimate ops can do the same — context matters.",
+    "mitreTactic": "DefenseEvasion",
+    "mitreTechnique": "T1562"
+  },
+  "parameters": {
+    "workspaceName": { "type": "string" },
+    "ruleId": { "type": "string", "defaultValue": "[newGuid()]" }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.OperationalInsights/workspaces/providers/alertRules",
+      "apiVersion": "2024-09-01",
+      "name": "[concat(parameters('workspaceName'), '/Microsoft.SecurityInsights/', parameters('ruleId'))]",
+      "kind": "Scheduled",
+      "properties": {
+        "displayName": "Network Security Group rule modified",
+        "description": "Detects successful Microsoft.Network/networkSecurityGroups/securityRules operations. Reviewer must validate the source/destination/port change aligns with approved change tickets.",
+        "severity": "Medium",
+        "enabled": true,
+        "query": "AzureActivity\n| where TimeGenerated > ago(1h)\n| where OperationNameValue has \"Microsoft.Network/networkSecurityGroups/securityRules\"\n| where ActivityStatusValue == \"Success\"\n| project TimeGenerated, Caller, OperationNameValue, ResourceId",
+        "queryFrequency": "PT30M",
+        "queryPeriod": "PT1H",
+        "triggerOperator": "GreaterThan",
+        "triggerThreshold": 0,
+        "tactics": ["DefenseEvasion"],
+        "techniques": ["T1562"],
+        "suppressionDuration": "PT1H",
+        "suppressionEnabled": false,
+        "eventGroupingSettings": { "aggregationKind": "SingleAlert" }
+      }
+    }
+  ]
+}

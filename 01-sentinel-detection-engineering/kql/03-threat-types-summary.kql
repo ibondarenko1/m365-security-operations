@@ -1,0 +1,17 @@
+// Drill 03 — Threat-type classification summary
+// Purpose: what has Defender already classified as a threat, and how was it handled.
+// Highlight emails where threat classification did NOT match delivery action (Phish + Delivered = investigation priority).
+// SC-200 pattern: filter + multi-dim group, JSON property extraction.
+
+EmailEvents
+| where Timestamp > ago(30d)
+| where isnotempty(ThreatTypes)
+| summarize Count = count()
+    by ThreatTypes, ConfidenceLevel, DeliveryAction
+| order by Count desc
+
+// Drill-down: Phish classified but Delivered (escaped filter)
+// EmailEvents
+// | where Timestamp > ago(30d)
+// | where ThreatTypes has "Phish" and DeliveryAction == "Delivered"
+// | project Timestamp, SenderFromAddress, SenderFromDomain, Subject, AttachmentCount, UrlCount, AuthenticationDetails, EmailDirection

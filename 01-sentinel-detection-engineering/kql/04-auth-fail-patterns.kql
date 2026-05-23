@@ -1,0 +1,22 @@
+// Drill 04 — Email authentication pattern distribution
+// Purpose: how SPF/DKIM/DMARC/CompAuth combinations correlate with delivery outcome.
+// Detect anomalies: e.g. an auth-fail pattern that mostly Blocks but occasionally Delivers — investigate why.
+// SC-200 pattern: parse_json extraction, extend, multi-dim group with calculated columns.
+
+EmailEvents
+| where Timestamp > ago(30d)
+| where EmailDirection == "Inbound"
+| extend SPF      = tostring(parse_json(AuthenticationDetails).SPF),
+         DKIM     = tostring(parse_json(AuthenticationDetails).DKIM),
+         DMARC    = tostring(parse_json(AuthenticationDetails).DMARC),
+         CompAuth = tostring(parse_json(AuthenticationDetails).CompAuth)
+| summarize Count = count()
+    by SPF, DKIM, DMARC, CompAuth, DeliveryAction
+| order by Count desc
+
+// Variations:
+//   Drill into a specific auth-fail pattern that delivered:
+//   EmailEvents
+//   | where Timestamp > ago(30d)
+//   | where AuthenticationDetails has "fail" and DeliveryAction == "Delivered"
+//   | project Timestamp, SenderFromAddress, Subject, AuthenticationDetails

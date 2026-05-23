@@ -1,0 +1,37 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "Sentinel Scheduled Analytics Rule — RBAC role assignment changes. MITRE Privilege Escalation + Persistence (T1098). Fires on any successful role assignment modification — privilege grants and removals are high-value events worth audit-logging regardless of normality.",
+    "mitreTactics": ["PrivilegeEscalation", "Persistence"],
+    "mitreTechnique": "T1098"
+  },
+  "parameters": {
+    "workspaceName": { "type": "string" },
+    "ruleId": { "type": "string", "defaultValue": "[newGuid()]" }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.OperationalInsights/workspaces/providers/alertRules",
+      "apiVersion": "2024-09-01",
+      "name": "[concat(parameters('workspaceName'), '/Microsoft.SecurityInsights/', parameters('ruleId'))]",
+      "kind": "Scheduled",
+      "properties": {
+        "displayName": "RBAC role assignment changes",
+        "description": "Detects successful Microsoft.Authorization/roleAssignments operations. Reviewer must validate the principal and role match approved change-management entries.",
+        "severity": "Medium",
+        "enabled": true,
+        "query": "AzureActivity\n| where TimeGenerated > ago(1h)\n| where OperationNameValue has \"Microsoft.Authorization/roleAssignments\"\n| where ActivityStatusValue == \"Success\"\n| project TimeGenerated, Caller, OperationNameValue, Properties_d, ResourceId",
+        "queryFrequency": "PT30M",
+        "queryPeriod": "PT1H",
+        "triggerOperator": "GreaterThan",
+        "triggerThreshold": 0,
+        "tactics": ["PrivilegeEscalation", "Persistence"],
+        "techniques": ["T1098"],
+        "suppressionDuration": "PT1H",
+        "suppressionEnabled": false,
+        "eventGroupingSettings": { "aggregationKind": "SingleAlert" }
+      }
+    }
+  ]
+}

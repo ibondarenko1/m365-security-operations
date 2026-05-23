@@ -1,0 +1,22 @@
+# Internal-only material - never commit
+.internal/
+.internal-screenshots/
+.internal-data/
+*.private.md
+*.internal.md
+*-INTERNAL-*
+*-REDACTED-*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Secrets / env
+.env
+.env.*
+*.key
+*.pem
+credentials.json
+secrets.json

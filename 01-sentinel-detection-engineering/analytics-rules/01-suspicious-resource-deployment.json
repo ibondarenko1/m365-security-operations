@@ -1,0 +1,37 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "Sentinel Scheduled Analytics Rule — Suspicious resource deployment in Azure subscription. MITRE Persistence (T1098). Fires on any successful subscription-level write operation in the last hour.",
+    "mitreTactic": "Persistence",
+    "mitreTechnique": "T1098"
+  },
+  "parameters": {
+    "workspaceName": { "type": "string" },
+    "ruleId": { "type": "string", "defaultValue": "[newGuid()]" }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.OperationalInsights/workspaces/providers/alertRules",
+      "apiVersion": "2024-09-01",
+      "name": "[concat(parameters('workspaceName'), '/Microsoft.SecurityInsights/', parameters('ruleId'))]",
+      "kind": "Scheduled",
+      "properties": {
+        "displayName": "Suspicious resource deployment",
+        "description": "Detects successful subscription-level write operations. Use in low-volume tenants where any resource creation is noteworthy.",
+        "severity": "Medium",
+        "enabled": true,
+        "query": "AzureActivity\n| where TimeGenerated > ago(1h)\n| where OperationNameValue endswith \"/write\"\n| where ActivityStatusValue == \"Success\"\n| project TimeGenerated, Caller, OperationNameValue, ResourceProviderValue, ResourceId, ActivityStatusValue",
+        "queryFrequency": "PT1H",
+        "queryPeriod": "PT1H",
+        "triggerOperator": "GreaterThan",
+        "triggerThreshold": 0,
+        "tactics": ["Persistence"],
+        "techniques": ["T1098"],
+        "suppressionDuration": "PT1H",
+        "suppressionEnabled": false,
+        "eventGroupingSettings": { "aggregationKind": "SingleAlert" }
+      }
+    }
+  ]
+}

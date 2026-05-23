@@ -1,0 +1,31 @@
+// Drill 10 — ExposureGraphNodes overview
+// Purpose: Defender for Cloud attack-surface graph census. Reveals tracked asset types
+// (CVE catalog, MDC recommendations, AI base models, endpoint health findings).
+// SC-200 pattern: basic group + count over a Defender-for-Cloud table.
+
+ExposureGraphNodes
+| summarize Count = count() by NodeLabel
+| order by Count desc
+| take 25
+
+// Drill-down into specific actionable categories:
+//
+// Endpoint health findings (small count, actionable):
+// ExposureGraphNodes
+// | where NodeLabel == "mde-healthFinding"
+// | project NodeId, NodeName, NodeProperties
+// | take 20
+//
+// AI base models tracked (Defender AI security plane):
+// ExposureGraphNodes
+// | where NodeLabel == "baseModel"
+// | project NodeId, NodeName
+// | take 30
+//
+// Defender for Cloud security recommendations (typically large catalog):
+// ExposureGraphNodes
+// | where NodeLabel == "mdcSecurityRecommendation"
+// | take 50
+
+// Note: large counts (e.g. CVE: 348k+) are global catalog, not tenant-specific.
+// Tenant-specific findings appear when ExposureGraphEdges links a tenant asset to a catalog node.

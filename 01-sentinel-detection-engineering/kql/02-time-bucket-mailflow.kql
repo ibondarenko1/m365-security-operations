@@ -1,0 +1,14 @@
+// Drill 02 — Hourly mailflow by delivery action
+// Purpose: time-series baseline of email volume per delivery action (Delivered, Junked, Blocked, Quarantined).
+// Detects off-hours spikes (bot activity), morning junk-waves, content-filter shifts.
+// SC-200 pattern: bin() time bucketing, multi-dim summarize, time-series order.
+
+EmailEvents
+| where Timestamp > ago(7d)
+| summarize EmailCount = count() by bin(Timestamp, 1h), DeliveryAction
+| order by Timestamp asc
+
+// Variations:
+//   bin(Timestamp, 5m)  — for burst-attack detection
+//   bin(Timestamp, 1d)  — for daily baseline establishment
+//   Append `| render timechart` for visualization in Defender Hunting / Sentinel Logs

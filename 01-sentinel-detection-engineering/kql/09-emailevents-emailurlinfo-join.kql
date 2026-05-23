@@ -1,0 +1,19 @@
+// Drill 09 — JOIN: EmailEvents to EmailUrlInfo
+// Purpose: correlate sender domain with URL domains carried in body. Reveals which sender domains
+// systematically deliver URLs pointing to which third-party domains. Spots structured anomalies
+// such as bulk-marketing relays, brand mismatches, redirect chains.
+// SC-200 pattern: join inner on NetworkMessageId, multi-table summarize.
+
+EmailEvents
+| where Timestamp > ago(30d)
+| where DeliveryAction == "Delivered"
+| join kind=inner EmailUrlInfo on NetworkMessageId
+| summarize UrlCount = count() by SenderFromDomain, UrlDomain
+| order by UrlCount desc
+| take 20
+
+// Alternative joins:
+//   kind=leftouter   — keep all EmailEvents rows, NULL where no URLs (find mail without URLs)
+//   kind=leftanti    — EmailEvents rows that have NO matching URLs at all
+//   kind=rightanti   — URL rows whose NetworkMessageId isn't in EmailEvents (orphan URLs)
+// All four join kinds are tested on SC-200.

@@ -1,0 +1,25 @@
+// Drill 08 — Classic phishing keyword scan in subjects
+// Purpose: surface emails whose subjects contain high-pressure / credential-bait phrasing.
+// Standalone signal has VERY HIGH false positive rate (modern phish avoids classic phrasing).
+// Use in combination with auth-fail signals and URL-reputation signals, not alone.
+// SC-200 pattern: has_any operator, multi-keyword filtering.
+
+EmailEvents
+| where Timestamp > ago(30d)
+| where EmailDirection == "Inbound"
+| where Subject has_any (
+    "urgent", "verify", "password", "suspended", "click here", "confirm",
+    "action required", "unusual activity", "expired", "locked", "limited",
+    "wire transfer", "invoice", "payroll", "tax", "refund", "delivery failed",
+    "package", "voicemail", "fax", "encrypted", "secure document"
+  )
+| summarize Count = count() by SenderFromDomain, DeliveryAction
+| order by Count desc
+
+// Better — combine with auth-fail for higher precision:
+// EmailEvents
+// | where Timestamp > ago(30d)
+// | where EmailDirection == "Inbound"
+// | where Subject has_any ("urgent", "verify", "password", "suspended", "action required")
+// | where AuthenticationDetails has "fail"
+// | project Timestamp, SenderFromDomain, Subject, DeliveryAction, AuthenticationDetails
