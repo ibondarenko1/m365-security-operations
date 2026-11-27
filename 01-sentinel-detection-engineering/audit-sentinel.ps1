@@ -1,4 +1,4 @@
-# audit-sentinel.ps1
+﻿# audit-sentinel.ps1
 # Microsoft Sentinel workspace posture audit via Azure REST API.
 # Verifies: workspace exists, daily quota set, retention configured, Sentinel onboarded,
 # Analytics Rules count, Fusion state, Activity Log diagnostic setting wired.
@@ -124,8 +124,8 @@ try {
 try {
     $rules = Invoke-ArmGet -Uri "$baseWs/providers/Microsoft.SecurityInsights/alertRules`?api-version=2024-09-01" | ConvertFrom-Json -ErrorAction Stop
     $ruleCount = $rules.value.Count
-    $enabledCount = ($rules.value | Where-Object { $_.properties.enabled }).Count
-    $fusionEnabled = ($rules.value | Where-Object { $_.kind -eq "Fusion" -and $_.properties.enabled }).Count -gt 0
+    $enabledCount = @($rules.value | Where-Object { $_.properties.enabled }).Count
+    $fusionEnabled = @($rules.value | Where-Object { $_.kind -eq "Fusion" -and $_.properties.enabled }).Count -gt 0
 
     if ($ruleCount -le 1) {
         [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "P2" `
@@ -232,7 +232,7 @@ try {
 try {
     $hqUri = "$baseWs/savedSearches`?api-version=2020-08-01"
     $hq = Invoke-ArmGet -Uri $hqUri | ConvertFrom-Json -ErrorAction Stop
-    $huntingCount = ($hq.value | Where-Object { $_.properties.category -eq "Hunting Queries" }).Count
+    $huntingCount = @($hq.value | Where-Object { $_.properties.category -eq "Hunting Queries" }).Count
     if ($huntingCount -eq 0) {
         [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "P3" `
             -Title "No saved hunting queries" `

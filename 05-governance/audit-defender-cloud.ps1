@@ -44,8 +44,8 @@ function Next-Id { $script:findingCounter++; return ("MDC-{0:D3}" -f $script:fin
 try {
     $pricings = Invoke-ArmGet -Uri "https://management.azure.com/subscriptions/$SubscriptionId/providers/Microsoft.Security/pricings`?api-version=2024-01-01" | ConvertFrom-Json -ErrorAction Stop
 
-    $freeCount = ($pricings.value | Where-Object { $_.properties.pricingTier -eq "Free" }).Count
-    $standardCount = ($pricings.value | Where-Object { $_.properties.pricingTier -eq "Standard" }).Count
+    $freeCount = @($pricings.value | Where-Object { $_.properties.pricingTier -eq "Free" }).Count
+    $standardCount = @($pricings.value | Where-Object { $_.properties.pricingTier -eq "Standard" }).Count
 
     [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "INFO" `
         -Title "Defender for Cloud plans inventory" `
@@ -110,9 +110,9 @@ try {
     $ass = Invoke-ArmGet -Uri $assUri | ConvertFrom-Json -ErrorAction SilentlyContinue
     if ($ass.value -and $ass.value.Count -gt 0) {
         $unhealthy = $ass.value | Where-Object { $_.properties.status.code -eq "Unhealthy" }
-        $high   = ($unhealthy | Where-Object { $_.properties.metadata.severity -eq "High" }).Count
-        $medium = ($unhealthy | Where-Object { $_.properties.metadata.severity -eq "Medium" }).Count
-        $low    = ($unhealthy | Where-Object { $_.properties.metadata.severity -eq "Low" }).Count
+        $high   = @($unhealthy | Where-Object { $_.properties.metadata.severity -eq "High" }).Count
+        $medium = @($unhealthy | Where-Object { $_.properties.metadata.severity -eq "Medium" }).Count
+        $low    = @($unhealthy | Where-Object { $_.properties.metadata.severity -eq "Low" }).Count
 
         if ($high -gt 0) {
             [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "P2" `

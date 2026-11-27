@@ -7,6 +7,34 @@ on:
     branches: [main]
 
 jobs:
+  mock-report:
+    name: Mock report (${{ matrix.shell }})
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        shell: [powershell, pwsh]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run the documented demo and check each phase
+        shell: ${{ matrix.shell }}
+        run: |
+          ./examples/run-mock.ps1
+          $dir = Get-ChildItem ./reports -Directory | Sort-Object Name -Descending | Select-Object -First 1
+          $titles = @()
+          foreach ($phase in 'defender-cloud', 'defender-o365', 'dns', 'identity', 'sentinel') {
+            $json = Get-Content (Join-Path $dir.FullName "$phase.json") -Raw -Encoding UTF8 | ConvertFrom-Json
+            $titles += $json.findings.title
+            if (-not $json.findings) { throw "No mock findings for $phase" }
+          }
+          foreach ($title in 'Single MX record (no backup)', 'Defender for Cloud high-severity recommendations open') {
+            if ($titles -notcontains $title) { throw "Missing expected fixture result: $title" }
+          }
+          if ($titles -contains 'Fusion (Advanced Multistage Attack Detection) not enabled') {
+            throw 'The fixture has an enabled Fusion rule'
+          }
+          $report = Get-Content (Join-Path $dir.FullName 'report.md') -Raw -Encoding UTF8
+          if ($report -notmatch '## Executive summary') { throw 'Missing consolidated report' }
+
   pester:
     name: Pester (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
