@@ -16,9 +16,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run the documented demo and check each phase
-        shell: ${{ matrix.shell }}
+        shell: pwsh
+        env:
+          MOCK_SHELL: ${{ matrix.shell }}
         run: |
-          ./examples/run-mock.ps1
+          & $env:MOCK_SHELL -NoProfile -NonInteractive -File ./examples/run-mock.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $dir = Get-ChildItem ./reports -Directory | Sort-Object Name -Descending | Select-Object -First 1
           $titles = @()
           foreach ($phase in 'defender-cloud', 'defender-o365', 'dns', 'identity', 'sentinel') {
