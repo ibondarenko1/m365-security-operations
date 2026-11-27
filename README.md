@@ -17,7 +17,7 @@ cd m365-security-operations
 ./examples/run-mock.ps1
 ```
 
-The mock run produces a complete sample report (30 findings across 5 domains) using bundled fixtures. Open `reports/<latest-timestamp>/report.md` to see what the toolkit actually produces.
+The mock run produces a complete sample report covering five domains using bundled fixtures. Open `reports/<latest-timestamp>/report.md` to see what the toolkit actually produces.
 
 See [`examples/sample-report.md`](examples/sample-report.md) for the same output rendered statically.
 

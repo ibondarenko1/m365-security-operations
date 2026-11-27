@@ -1,4 +1,4 @@
-# Generate-Report.ps1
+﻿# Generate-Report.ps1
 # Aggregate all per-phase JSON findings in reports/<timestamp>/ into a single markdown report.
 # Usage: .\Generate-Report.ps1 -ReportsDir reports/2026-05-22T18-30-12
 

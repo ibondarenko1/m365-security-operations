@@ -1,4 +1,4 @@
-# audit-dns-posture.ps1
+﻿# audit-dns-posture.ps1
 # Email-auth + transport-security DNS sweep for a Microsoft 365-hosted domain.
 # Emits findings as JSON per SCHEMA.md. Console summary printed to stdout.
 # Usage: .\audit-dns-posture.ps1 -Domain example.com -OutputJsonPath reports/<timestamp>/dns.json
@@ -293,7 +293,7 @@ if ($dkimTarget) {
 
 # === MX backup ===
 $mxAll = Resolve-OrNull -Name $Domain -Type "MX" -Server $Resolver
-$mxCount = if ($mxAll) { ($mxAll | Where-Object { $_.NameExchange }).Count } else { 0 }
+$mxCount = if ($mxAll) { @($mxAll | Where-Object { $_.NameExchange }).Count } else { 0 }
 if ($mxCount -eq 1) {
     [void]$findings.Add((New-Finding -Id (Next-Id) -Severity "INFO" `
         -Title "Single MX record (no backup)" `

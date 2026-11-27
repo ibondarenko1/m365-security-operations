@@ -1,4 +1,4 @@
-# audit-identity-posture.ps1
+﻿# audit-identity-posture.ps1
 # Microsoft Entra ID identity posture sweep via Microsoft Graph API.
 # Emits findings as JSON per SCHEMA.md. Console summary printed to stdout.
 # Prereqs: az login already done with sufficient Graph scopes.
